@@ -80,8 +80,8 @@ func TestLoadSpecRejectsBadFormat(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
 	for name, body := range map[string]string{
-		"neither key": `{"paths":{"/x":{"get":{}}}}`,
-		"no paths":    `{"openapi":"3.0.0"}`,
+		"neither key":  `{"paths":{"/x":{"get":{}}}}`,
+		"no paths":     `{"openapi":"3.0.0"}`,
 		"invalid json": `not-json`,
 	} {
 		name, body := name, body

@@ -40,9 +40,9 @@ func newListContextsCmd() *cobra.Command {
 				return err
 			}
 			type row struct {
-				Name     string `json:"name"`
-				BaseURL  string `json:"base-url"`
-				Current  bool   `json:"current"`
+				Name    string `json:"name"`
+				BaseURL string `json:"base-url"`
+				Current bool   `json:"current"`
 			}
 			out := make([]row, 0, len(cfg.Contexts))
 			for k, v := range cfg.Contexts {

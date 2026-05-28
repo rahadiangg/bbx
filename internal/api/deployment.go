@@ -33,12 +33,12 @@ type DeploymentQueue struct {
 // Regression-tested in TestListDeploymentQueueEmpty.
 type rawDeploymentQueueEnvelope struct {
 	QueuedDeployments struct {
-		Size              int                   `json:"size"`
-		QueuedDeployment  []DeploymentQueueItem `json:"queuedDeployment"`
+		Size             int                   `json:"size"`
+		QueuedDeployment []DeploymentQueueItem `json:"queuedDeployment"`
 	} `json:"queuedDeployments"`
 	InProgress struct {
-		Size              int                   `json:"size"`
-		QueuedDeployment  []DeploymentQueueItem `json:"queuedDeployment"`
+		Size             int                   `json:"size"`
+		QueuedDeployment []DeploymentQueueItem `json:"queuedDeployment"`
 	} `json:"inProgress"`
 }
 
@@ -64,14 +64,14 @@ func (c *Client) ListDeploymentQueue(ctx context.Context) (*DeploymentQueue, err
 
 // DeploymentResult is the outcome of a single deployment.
 type DeploymentResult struct {
-	ID                  int64  `json:"id,omitempty"`
-	DeploymentVersion   any    `json:"deploymentVersion,omitempty"`
-	DeploymentState     string `json:"deploymentState,omitempty"`
-	LifeCycleState      string `json:"lifeCycleState,omitempty"`
-	StartedDate         string `json:"startedDate,omitempty"`
-	FinishedDate        string `json:"finishedDate,omitempty"`
-	Reason              string `json:"reason,omitempty"`
-	Environment         any    `json:"environment,omitempty"`
+	ID                int64  `json:"id,omitempty"`
+	DeploymentVersion any    `json:"deploymentVersion,omitempty"`
+	DeploymentState   string `json:"deploymentState,omitempty"`
+	LifeCycleState    string `json:"lifeCycleState,omitempty"`
+	StartedDate       string `json:"startedDate,omitempty"`
+	FinishedDate      string `json:"finishedDate,omitempty"`
+	Reason            string `json:"reason,omitempty"`
+	Environment       any    `json:"environment,omitempty"`
 }
 
 // TriggerDeployment enqueues a deployment of `versionID` to `environmentID`.
@@ -104,7 +104,7 @@ func (c *Client) GetDeploymentResult(ctx context.Context, id int64) (*Deployment
 
 // VersionPreview previews what version would be deployed.
 type VersionPreview struct {
-	NextVersionName    string `json:"nextVersionName,omitempty"`
+	NextVersionName     string `json:"nextVersionName,omitempty"`
 	PreviousVersionName string `json:"previousVersionName,omitempty"`
 }
 

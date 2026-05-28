@@ -12,19 +12,19 @@ import (
 
 // QueuedBuild describes an entry in /api/latest/queue.
 type QueuedBuild struct {
-	PlanKey         string `json:"planKey"`
-	TriggerReason   string `json:"triggerReason,omitempty"`
-	BuildNumber     int    `json:"buildNumber,omitempty"`
-	BuildResultKey  string `json:"buildResultKey,omitempty"`
-	Link            Link   `json:"link,omitempty"`
+	PlanKey        string `json:"planKey"`
+	TriggerReason  string `json:"triggerReason,omitempty"`
+	BuildNumber    int    `json:"buildNumber,omitempty"`
+	BuildResultKey string `json:"buildResultKey,omitempty"`
+	Link           Link   `json:"link,omitempty"`
 }
 
 type queueEnvelope struct {
 	QueuedBuilds struct {
-		Size          int           `json:"size"`
-		MaxResult     int           `json:"max-result"`
-		StartIndex    int           `json:"start-index"`
-		QueuedBuild   []QueuedBuild `json:"queuedBuild"`
+		Size        int           `json:"size"`
+		MaxResult   int           `json:"max-result"`
+		StartIndex  int           `json:"start-index"`
+		QueuedBuild []QueuedBuild `json:"queuedBuild"`
 	} `json:"queuedBuilds"`
 }
 
@@ -117,18 +117,18 @@ type PlanResultKey struct {
 
 // BuildResult is a single build outcome.
 type BuildResult struct {
-	Key                 string `json:"key"`
-	BuildNumber         int    `json:"buildNumber"`
-	PlanKey             string `json:"planKey,omitempty"`
-	State               string `json:"state,omitempty"`
-	LifeCycleState      string `json:"lifeCycleState,omitempty"`
-	BuildState          string `json:"buildState,omitempty"`
-	BuildStartedTime    string `json:"buildStartedTime,omitempty"`
-	BuildCompletedTime  string `json:"buildCompletedTime,omitempty"`
-	BuildDurationInSec  int    `json:"buildDurationInSeconds,omitempty"`
-	PrettyBuildDuration string `json:"prettyBuildDuration,omitempty"`
-	BuildReason         string `json:"buildReason,omitempty"`
-	Successful          bool   `json:"successful,omitempty"`
+	Key                 string        `json:"key"`
+	BuildNumber         int           `json:"buildNumber"`
+	PlanKey             string        `json:"planKey,omitempty"`
+	State               string        `json:"state,omitempty"`
+	LifeCycleState      string        `json:"lifeCycleState,omitempty"`
+	BuildState          string        `json:"buildState,omitempty"`
+	BuildStartedTime    string        `json:"buildStartedTime,omitempty"`
+	BuildCompletedTime  string        `json:"buildCompletedTime,omitempty"`
+	BuildDurationInSec  int           `json:"buildDurationInSeconds,omitempty"`
+	PrettyBuildDuration string        `json:"prettyBuildDuration,omitempty"`
+	BuildReason         string        `json:"buildReason,omitempty"`
+	Successful          bool          `json:"successful,omitempty"`
 	PlanResultKey       PlanResultKey `json:"planResultKey,omitempty"`
 }
 
@@ -190,7 +190,9 @@ type BuildLog struct {
 }
 
 // jobResultEnvelope is the inner shape under
-//   /result/{key}?expand=stages.stage.results.result
+//
+//	/result/{key}?expand=stages.stage.results.result
+//
 // We only care about the result keys, but the structure is nested 4 deep.
 type jobResultEnvelope struct {
 	Stages struct {

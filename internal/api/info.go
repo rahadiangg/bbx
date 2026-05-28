@@ -12,11 +12,11 @@ import (
 // endpoint going back to at least Bamboo 6.x — making it the best signal for
 // "what version is on the other end of the wire."
 type ServerInfo struct {
-	Version     string `json:"version"`             // e.g. "8.2.4" or "9.6.1"
-	Edition     string `json:"edition,omitempty"`   // empty on Server; "DC" on Data Center
+	Version     string `json:"version"`           // e.g. "8.2.4" or "9.6.1"
+	Edition     string `json:"edition,omitempty"` // empty on Server; "DC" on Data Center
 	BuildNumber string `json:"buildNumber,omitempty"`
 	BuildDate   string `json:"buildDate,omitempty"`
-	State       string `json:"state,omitempty"`     // typically "RUNNING"
+	State       string `json:"state,omitempty"` // typically "RUNNING"
 }
 
 // MajorVersion returns the integer major-version component of Version, or 0

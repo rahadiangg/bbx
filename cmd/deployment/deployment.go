@@ -117,7 +117,7 @@ func newResultCmd() *cobra.Command {
 
 func newPreviewCmd() *cobra.Command {
 	var (
-		projectID    string
+		projectID     string
 		planResultKey string
 	)
 	c := &cobra.Command{

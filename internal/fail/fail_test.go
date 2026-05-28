@@ -10,9 +10,9 @@ import (
 func TestErrorString(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name  string
-		err   *Error
-		want  string
+		name string
+		err  *Error
+		want string
 	}{
 		{
 			name: "with http status",

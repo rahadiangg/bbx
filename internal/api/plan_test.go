@@ -256,8 +256,9 @@ func TestClonePlanRejectsEmptyArgs(t *testing.T) {
 }
 
 // TestDeletePlanBranch verifies the two-step delete flow:
-//   1. GET branch to look up its plan key (Bamboo assigns auto keys like PROJ-A0)
-//   2. DELETE that plan key
+//  1. GET branch to look up its plan key (Bamboo assigns auto keys like PROJ-A0)
+//  2. DELETE that plan key
+//
 // Bamboo 8.2.4 returns 405 on DELETE /plan/{key}/branch/{name}.
 func TestDeletePlanBranch(t *testing.T) {
 	t.Parallel()

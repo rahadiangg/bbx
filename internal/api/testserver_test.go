@@ -9,21 +9,21 @@ import (
 
 // recordedReq captures the salient fields of an inbound request for assertions.
 type recordedReq struct {
-	Method     string
-	Path       string
-	RawQuery   string
-	Body       []byte
-	AuthHeader string
-	Accept     string
-	UserAgent  string
+	Method      string
+	Path        string
+	RawQuery    string
+	Body        []byte
+	AuthHeader  string
+	Accept      string
+	UserAgent   string
 	ContentType string
 }
 
 // route maps a "METHOD /path" pair to a handler-like description.
 type route struct {
-	Status   int
-	Body     string
-	Capture  *recordedReq
+	Status  int
+	Body    string
+	Capture *recordedReq
 }
 
 // fakeBamboo spins up a small httptest server that records the most recent
@@ -31,9 +31,9 @@ type route struct {
 // Routes match exactly on "METHOD /path"; the route returned for an unmatched
 // request is a 404 with a JSON payload Bamboo would typically emit.
 type fakeBamboo struct {
-	t       *testing.T
-	server  *httptest.Server
-	routes  map[string]*route
+	t      *testing.T
+	server *httptest.Server
+	routes map[string]*route
 }
 
 func newFakeBamboo(t *testing.T) *fakeBamboo {

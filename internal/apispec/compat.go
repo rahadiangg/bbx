@@ -14,10 +14,10 @@ import (
 // `paths` map (path -> method -> operation); full schema validation is out
 // of scope. Both Swagger v2 and OpenAPI v3 use the same path structure.
 type Spec struct {
-	Source     string                            // URL or file path it came from
-	Format     string                            // "openapi-3.x" or "swagger-2.0"
-	BasePath   string                            // v2 may set "basePath"; we strip it before matching
-	PathMethods map[string]map[string]struct{}   // path -> set of uppercase methods
+	Source      string                         // URL or file path it came from
+	Format      string                         // "openapi-3.x" or "swagger-2.0"
+	BasePath    string                         // v2 may set "basePath"; we strip it before matching
+	PathMethods map[string]map[string]struct{} // path -> set of uppercase methods
 }
 
 // rawSpec captures just enough of the JSON to extract the info we need.
@@ -99,14 +99,14 @@ type CheckReport struct {
 	SpecFormat       string
 	Checked          int
 	Excluded         int
-	Missing          []Endpoint // path absent from spec entirely
+	Missing          []Endpoint       // path absent from spec entirely
 	MethodMismatches []MethodMismatch // path present but expected method missing
 }
 
 // MethodMismatch is an endpoint whose path exists in the spec but with a
 // different set of methods than bbx expects.
 type MethodMismatch struct {
-	Endpoint        Endpoint
+	Endpoint         Endpoint
 	AvailableMethods []string // sorted
 }
 
@@ -169,7 +169,7 @@ func Check(spec *Spec, endpoints []Endpoint) CheckReport {
 			// Stable order for readable diffs
 			sortStrings(avail)
 			report.MethodMismatches = append(report.MethodMismatches, MethodMismatch{
-				Endpoint:        e,
+				Endpoint:         e,
 				AvailableMethods: avail,
 			})
 		}

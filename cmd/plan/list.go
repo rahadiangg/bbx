@@ -23,10 +23,10 @@ func (p planList) RenderTable(w io.Writer) error {
 
 func newListCmd() *cobra.Command {
 	var (
-		limit    int
-		max      int
-		expand   string
-		all      bool
+		limit  int
+		max    int
+		expand string
+		all    bool
 	)
 	c := &cobra.Command{
 		Use:   "list",
