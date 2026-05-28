@@ -85,3 +85,9 @@ The four skills (`bbx`, `bbx-setup`, `bbx-trigger-build`, `bbx-investigate-build
 - `.github/workflows/ci.yml` — `go test -race` + `go vet` + `golangci-lint` + `make build` on PR + push to `main`.
 - `.github/workflows/api-compat.yml` — `TestAPICompat` matrix over Bamboo 9.0.0/9.2.1/10.0.0/11.0.0/12.1.1 with `BBX_COMPAT_SWAGGER` per cell. `fail-fast: false`. Weekly cron catches upstream spec changes.
 - Live-Bamboo CI is intentionally not wired (needs Atlassian license + agent provisioning).
+
+## Release
+
+Ship a release: `git tag v<x.y.z> && git push --tags`. That fires `.github/workflows/release.yml`, which runs `goreleaser` (config in `.goreleaser.yaml`) to build all 6 OS/arch combos, generate `checksums.txt`, derive the changelog from conventional-commit messages, and publish a GitHub release. `install.sh` at the repo root consumes that release for `curl|sh` installation.
+
+Smoke-test locally before tagging: `goreleaser check` then `goreleaser build --snapshot --clean --single-target` (~3s).

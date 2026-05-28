@@ -31,6 +31,32 @@ in the CI matrix).
 
 ## Install
 
+### One-line install (Linux / macOS)
+
+```sh
+curl -sSfL https://raw.githubusercontent.com/rahadiangg/bbx/main/install.sh | sh
+```
+
+The script detects your OS + architecture, fetches the matching archive from
+the latest GitHub release, verifies its SHA-256 checksum, and installs `bbx`
+into `~/.local/bin` (or `/usr/local/bin` if the former isn't writable).
+
+Pin a specific version or change the install path via environment variables:
+
+```sh
+BBX_VERSION=v0.1.0 BBX_INSTALL_DIR=$HOME/bin \
+  curl -sSfL https://raw.githubusercontent.com/rahadiangg/bbx/main/install.sh | sh
+```
+
+### Manual download
+
+Pre-built binaries for **Linux**, **macOS**, and **Windows** on both **amd64**
+and **arm64** are attached to every release at
+[github.com/rahadiangg/bbx/releases](https://github.com/rahadiangg/bbx/releases).
+Each release ships a `checksums.txt` for SHA-256 verification.
+
+### From source (Go 1.26+)
+
 ```sh
 git clone https://github.com/rahadiangg/bbx
 cd bbx

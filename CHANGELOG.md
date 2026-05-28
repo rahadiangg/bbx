@@ -6,6 +6,18 @@ All notable changes to bbx are documented here. Format follows
 
 ## [Unreleased]
 
+### Added — release pipeline
+
+- `.goreleaser.yaml` — multi-arch builds (Linux / macOS / Windows × amd64 /
+  arm64), tar.gz + zip archives, SHA-256 checksums, GitHub release with
+  conventional-commit changelog grouping.
+- `.github/workflows/release.yml` — tag-triggered (`v*`) workflow that runs
+  GoReleaser via `goreleaser/goreleaser-action@v6`.
+- `install.sh` — POSIX-portable installer. Detects OS + arch, resolves the
+  latest release from the GitHub API (or honours `BBX_VERSION`), verifies
+  the SHA-256 checksum, installs to `~/.local/bin` (or `BBX_INSTALL_DIR`).
+  Usable via `curl -sSfL .../install.sh | sh`.
+
 ### Added — full pipeline-configuration extraction
 
 - `bbx plan spec <key>` — Bamboo Specs **Java source** for a plan (stages,

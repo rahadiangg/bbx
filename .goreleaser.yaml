@@ -1,0 +1,97 @@
+version: 2
+
+project_name: bbx
+
+before:
+  hooks:
+    - go mod tidy
+    - go test ./...
+
+builds:
+  - id: bbx
+    binary: bbx
+    main: .
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X github.com/rahadiangg/bbx/internal/version.Version={{ .Version }}
+      - -X github.com/rahadiangg/bbx/internal/version.Commit={{ .ShortCommit }}
+      - -X github.com/rahadiangg/bbx/internal/version.Date={{ .Date }}
+
+archives:
+  - id: bbx
+    ids:
+      - bbx
+    # bbx_0.1.0_linux_amd64.tar.gz   (or .zip on Windows)
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_
+      {{- if eq .Os "darwin" }}macos
+      {{- else }}{{ .Os }}{{ end }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else }}{{ .Arch }}{{ end }}
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - README.md
+      - LICENSE
+      - CHANGELOG.md
+
+checksum:
+  name_template: "checksums.txt"
+  algorithm: sha256
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "Merge pull request"
+      - "Merge branch"
+  groups:
+    - title: Features
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: Bug fixes
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+    - title: CI / release
+      regexp: "^.*ci[(\\w)]*:+.*$"
+      order: 2
+    - title: Other
+      order: 999
+
+release:
+  github:
+    owner: rahadiangg
+    name: bbx
+  draft: false
+  prerelease: auto
+  name_template: "bbx {{ .Tag }}"
+  footer: |
+    ---
+    **One-line install**
+
+    ```sh
+    curl -sSfL https://raw.githubusercontent.com/rahadiangg/bbx/main/install.sh | sh
+    ```
+
+    Pin a specific version with `BBX_VERSION={{ .Tag }}` before the pipe.
+    See [CHANGELOG.md](https://github.com/rahadiangg/bbx/blob/main/CHANGELOG.md) for details.
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-dev"
