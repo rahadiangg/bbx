@@ -5,10 +5,19 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 `bbx` is a Go CLI for Atlassian Bamboo Server, modelled after Grafana's `gcx`.
-The MVP focuses on **pipeline management**: plans, plan branches, plan
-variables, builds, queue, build comments/labels, and deployments. Other Bamboo
-API areas are recognized as commands but emit a "not yet implemented" notice
-(see [`docs/API_COVERAGE.md`](docs/API_COVERAGE.md)).
+It covers two surfaces:
+
+- **Pipeline management** — plans, plan branches/variables, builds, queue,
+  comments/labels, deployments.
+- **Pipeline configuration extraction** — `bbx plan spec` (Bamboo Specs Java
+  source), `bbx plan config`, project + deployment-project metadata,
+  environment variables / requirements / agent assignments. Enough surface
+  for an AI agent to fully understand or replicate a Bamboo pipeline in
+  another CI system.
+
+Other Bamboo API areas (server admin, users, sessions, …) are recognized as
+commands but emit a "not yet implemented" notice (see
+[`docs/API_COVERAGE.md`](docs/API_COVERAGE.md)).
 
 The CLI is designed to be friendly both for humans and AI agents — output
 auto-switches to JSON when stdout is not a TTY or when running inside an agent

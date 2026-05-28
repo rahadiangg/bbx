@@ -72,11 +72,37 @@ func All() []Endpoint {
 			Excluded: true, Note: "GetBuildLog (non-REST, /download/* — session-cookie auth on 8.x)",
 		},
 
-		// deployment.go
+		// deployment.go — runtime
 		{Method: "GET", Path: "/api/latest/queue/deployment", Note: "ListDeploymentQueue"},
 		{Method: "POST", Path: "/api/latest/queue/deployment", Note: "TriggerDeployment"},
 		{Method: "DELETE", Path: "/api/latest/queue/deployment/{deploymentResultId}", Note: "CancelDeployment"},
 		{Method: "GET", Path: "/api/latest/deploy/result/{deploymentResultId}", Note: "GetDeploymentResult"},
 		{Method: "GET", Path: "/api/latest/deploy/preview/version", Note: "PreviewDeploymentVersion"},
+
+		// plan.go — config extraction
+		{Method: "GET", Path: "/api/latest/plan/{projectKey}-{buildKey}/specs", Note: "GetPlanSpec"},
+		{Method: "GET", Path: "/api/latest/plan/{projectKey}-{buildKey}/artifact", Note: "ListPlanArtifacts"},
+		{Method: "GET", Path: "/api/latest/plan/{projectKey}-{buildKey}/vcsBranches", Note: "ListPlanVCSBranches"},
+		// GetPlanConfig hits the same /plan/{projectKey}-{buildKey} path as GetPlan,
+		// just with an `expand` query. No separate registry entry needed.
+
+		// project.go — new
+		{Method: "GET", Path: "/api/latest/project/{projectKey}", Note: "GetProject"},
+		{Method: "GET", Path: "/api/latest/project/{projectKey}/specs", Note: "GetProjectSpec"},
+		{Method: "GET", Path: "/api/latest/project/{projectKey}/variables", Note: "ListProjectVariables"},
+		{Method: "GET", Path: "/api/latest/project/{projectKey}/variable/{variableName}", Note: "GetProjectVariable"},
+		{Method: "GET", Path: "/api/latest/project/{projectKey}/repository", Note: "ListProjectRepositories"},
+
+		// deployment.go — config extraction (project + environment + versions)
+		{Method: "GET", Path: "/api/latest/deploy/project/all", Note: "ListDeploymentProjects"},
+		{Method: "GET", Path: "/api/latest/deploy/project/forPlan", Note: "ListDeploymentProjectsForPlan"},
+		{Method: "GET", Path: "/api/latest/deploy/project/{deploymentProjectId}", Note: "GetDeploymentProject"},
+		{Method: "GET", Path: "/api/latest/deploy/project/{deploymentProjectId}/specs", Note: "GetDeploymentProjectSpec"},
+		{Method: "GET", Path: "/api/latest/deploy/project/{deploymentProjectId}/repository", Note: "ListDeploymentProjectRepositories"},
+		{Method: "GET", Path: "/api/latest/deploy/project/{deploymentProjectId}/versions", Note: "ListDeploymentVersions"},
+		{Method: "GET", Path: "/api/latest/deploy/environment/{environmentId}", Note: "GetDeploymentEnvironment"},
+		{Method: "GET", Path: "/api/latest/deploy/environment/{environmentId}/variables", Note: "ListEnvironmentVariables"},
+		{Method: "GET", Path: "/api/latest/deploy/environment/{environmentId}/requirement", Note: "ListEnvironmentRequirements"},
+		{Method: "GET", Path: "/api/latest/deploy/environment/{environmentId}/agent-assignment", Note: "ListEnvironmentAgentAssignments"},
 	}
 }

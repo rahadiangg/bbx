@@ -14,6 +14,7 @@ import (
 	deploymentcmd "github.com/rahadiangg/bbx/cmd/deployment"
 	futurecmd "github.com/rahadiangg/bbx/cmd/future"
 	plancmd "github.com/rahadiangg/bbx/cmd/plan"
+	projectcmd "github.com/rahadiangg/bbx/cmd/project"
 	queuecmd "github.com/rahadiangg/bbx/cmd/queue"
 	"github.com/rahadiangg/bbx/internal/fail"
 	"github.com/rahadiangg/bbx/internal/output"
@@ -59,6 +60,7 @@ func New() *cobra.Command {
 	rootCmd.AddCommand(newInfoCmd())
 	rootCmd.AddCommand(authcmd.New())
 	rootCmd.AddCommand(configcmd.New())
+	rootCmd.AddCommand(projectcmd.New())
 	rootCmd.AddCommand(plancmd.New())
 	rootCmd.AddCommand(buildcmd.New())
 	rootCmd.AddCommand(queuecmd.New())

@@ -275,6 +275,95 @@ func TestDeletePlanBranch(t *testing.T) {
 	}
 }
 
+func TestGetPlanSpec(t *testing.T) {
+	t.Parallel()
+	fb := newFakeBamboo(t)
+	fb.expect("GET", "/rest/api/latest/plan/PROJ-A/specs", 200,
+		`{"spec":{"projectKey":"PROJ","buildKey":"A","code":"package PROJ;\n\n@BambooSpec\npublic class A {}\n"}}`)
+	c := newTestClient(t, fb)
+
+	sp, err := c.GetPlanSpec(context.Background(), "PROJ-A")
+	if err != nil {
+		t.Fatalf("GetPlanSpec: %v", err)
+	}
+	if sp.ProjectKey != "PROJ" || sp.BuildKey != "A" || sp.Code == "" {
+		t.Fatalf("spec = %+v", sp)
+	}
+	if !strings.Contains(sp.Code, "@BambooSpec") {
+		t.Errorf("Code should be Java; got %q", sp.Code)
+	}
+}
+
+func TestGetPlanConfig(t *testing.T) {
+	t.Parallel()
+	fb := newFakeBamboo(t)
+	rec := fb.expect("GET", "/rest/api/latest/plan/PROJ-A", 200,
+		`{"key":"PROJ-A","stages":{"size":1,"stage":[{"name":"Default Stage","plans":{"plan":[{"key":"PROJ-A-JOB1"}]}}]}}`)
+	c := newTestClient(t, fb)
+
+	cfg, err := c.GetPlanConfig(context.Background(), "PROJ-A")
+	if err != nil {
+		t.Fatalf("GetPlanConfig: %v", err)
+	}
+	if !strings.Contains(rec.RawQuery, "expand=stages.stage.plans.plan") {
+		t.Errorf("expected expand query param, got %q", rec.RawQuery)
+	}
+	if cfg["key"] != "PROJ-A" {
+		t.Fatalf("unexpected cfg: %+v", cfg)
+	}
+}
+
+func TestListPlanArtifacts(t *testing.T) {
+	t.Parallel()
+	fb := newFakeBamboo(t)
+	fb.expect("GET", "/rest/api/latest/plan/PROJ-A/artifact", 200, `{
+		"artifacts":{"size":1,"max-result":25,"start-index":0,
+			"artifact":[{"name":"binaries","location":"out/","copyPattern":"*.jar","shared":true,"required":false}]
+		}
+	}`)
+	c := newTestClient(t, fb)
+	page, err := c.ListPlanArtifacts(context.Background(), "PROJ-A", PageOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(page.Results) != 1 || page.Results[0].Name != "binaries" || !page.Results[0].Shared {
+		t.Errorf("results = %+v", page.Results)
+	}
+}
+
+func TestListPlanArtifactsEmpty(t *testing.T) {
+	t.Parallel()
+	fb := newFakeBamboo(t)
+	fb.expect("GET", "/rest/api/latest/plan/PROJ-A/artifact", 200,
+		`{"artifacts":{"size":0,"max-result":25,"start-index":0}}`)
+	c := newTestClient(t, fb)
+	page, err := c.ListPlanArtifacts(context.Background(), "PROJ-A", PageOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if page.Results == nil || len(page.Results) != 0 {
+		t.Fatalf("expected empty non-nil slice; got %+v", page.Results)
+	}
+}
+
+func TestListPlanVCSBranches(t *testing.T) {
+	t.Parallel()
+	fb := newFakeBamboo(t)
+	fb.expect("GET", "/rest/api/latest/plan/PROJ-A/vcsBranches", 200, `{
+		"branches":{"size":3,"max-result":25,"start-index":0,
+			"branch":[{"name":"main"},{"name":"dev"},{"name":"feature/x"}]
+		}
+	}`)
+	c := newTestClient(t, fb)
+	page, err := c.ListPlanVCSBranches(context.Background(), "PROJ-A", PageOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(page.Results) != 3 || page.Results[0].Name != "main" {
+		t.Errorf("results = %+v", page.Results)
+	}
+}
+
 // TestListPlanVariablesEmptyTopLevelArray verifies the case where Bamboo
 // returns an empty array (no variables defined).
 func TestListPlanVariablesEmptyTopLevelArray(t *testing.T) {

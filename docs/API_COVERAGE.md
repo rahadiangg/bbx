@@ -53,6 +53,24 @@ This document tracks which tags `bbx` covers today and which are deferred.
 | `bbx plan branch delete  <plan> <branch>`        | `GET /branch/{name}` + `DELETE /plan/{branchKey}`           |
 | `bbx build log <build-key> [--job <jobKey>]`     | `GET /rest/api/latest/result/{key}?expand=stages...` + `GET /download/{jobKey}/build_logs/{jobKey}-N.log` (non-REST) |
 | `bbx info`                                       | `GET /rest/api/latest/info`                                 |
+| `bbx plan spec <key>`                            | `GET /rest/api/latest/plan/{key}/specs`                     |
+| `bbx plan config <key>`                          | `GET /rest/api/latest/plan/{key}?expand=stages…`           |
+| `bbx plan artifact list <key>`                   | `GET /rest/api/latest/plan/{key}/artifact`                  |
+| `bbx plan vcs-branches <key>`                    | `GET /rest/api/latest/plan/{key}/vcsBranches`               |
+| `bbx project get <key>`                          | `GET /rest/api/latest/project/{key}`                        |
+| `bbx project spec <key>`                         | `GET /rest/api/latest/project/{key}/specs`                  |
+| `bbx project variable list <key>`                | `GET /rest/api/latest/project/{key}/variables`              |
+| `bbx project variable get <key> <name>`          | `GET /rest/api/latest/project/{key}/variable/{name}`        |
+| `bbx project repository list <key>`              | `GET /rest/api/latest/project/{key}/repository`             |
+| `bbx deployment project list [--for-plan <key>]` | `GET /rest/api/latest/deploy/project/all` or `/forPlan`     |
+| `bbx deployment project get <id>`                | `GET /rest/api/latest/deploy/project/{id}`                  |
+| `bbx deployment project spec <id>`               | `GET /rest/api/latest/deploy/project/{id}/specs`            |
+| `bbx deployment project repository list <id>`    | `GET /rest/api/latest/deploy/project/{id}/repository`       |
+| `bbx deployment version list <id>`               | `GET /rest/api/latest/deploy/project/{id}/versions`         |
+| `bbx deployment environment get <envId>`         | `GET /rest/api/latest/deploy/environment/{envId}`           |
+| `bbx deployment environment variable list <envId>` | `GET /rest/api/latest/deploy/environment/{envId}/variables` |
+| `bbx deployment environment requirement list <envId>` | `GET /rest/api/latest/deploy/environment/{envId}/requirement` |
+| `bbx deployment environment agent list <envId>`  | `GET /rest/api/latest/deploy/environment/{envId}/agent-assignment` |
 | `bbx build trigger <plan>`                       | `POST /rest/api/latest/queue/{plan}`                        |
 | `bbx build stop <build-key>`                     | `DELETE /rest/api/latest/queue/{key}`                       |
 | `bbx build continue <build-key>`                 | `PUT /rest/api/latest/queue/{key}`                          |

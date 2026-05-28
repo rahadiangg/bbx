@@ -129,6 +129,175 @@ func TestPreviewDeploymentVersionEmptyQuery(t *testing.T) {
 	}
 }
 
+// Deployment config-extraction tests -----------------------------------------
+
+func TestListDeploymentProjects(t *testing.T) {
+	t.Parallel()
+	fb := newFakeBamboo(t)
+	fb.expect("GET", "/rest/api/latest/deploy/project/all", 200,
+		`[{"id":1,"name":"DP1","planKey":{"key":"PROJ-A"}},{"id":2,"name":"DP2","planKey":{"key":"PROJ-B"}}]`)
+	c := newTestClient(t, fb)
+	dps, err := c.ListDeploymentProjects(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(dps) != 2 || dps[0].Name != "DP1" || dps[1].ID != 2 {
+		t.Errorf("dps = %+v", dps)
+	}
+}
+
+func TestListDeploymentProjectsForPlan(t *testing.T) {
+	t.Parallel()
+	fb := newFakeBamboo(t)
+	rec := fb.expect("GET", "/rest/api/latest/deploy/project/forPlan", 200,
+		`[{"id":7,"name":"DPlinked"}]`)
+	c := newTestClient(t, fb)
+	dps, err := c.ListDeploymentProjectsForPlan(context.Background(), "PROJ-A")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(rec.RawQuery, "planKey=PROJ-A") {
+		t.Errorf("query missing planKey: %q", rec.RawQuery)
+	}
+	if len(dps) != 1 || dps[0].ID != 7 {
+		t.Errorf("dps = %+v", dps)
+	}
+}
+
+func TestListDeploymentProjectsForPlanEmpty(t *testing.T) {
+	t.Parallel()
+	fb := newFakeBamboo(t)
+	fb.expect("GET", "/rest/api/latest/deploy/project/forPlan", 200, `[]`)
+	c := newTestClient(t, fb)
+	dps, err := c.ListDeploymentProjectsForPlan(context.Background(), "PROJ-A")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dps == nil || len(dps) != 0 {
+		t.Fatalf("expected non-nil empty slice; got %+v", dps)
+	}
+}
+
+func TestGetDeploymentProject(t *testing.T) {
+	t.Parallel()
+	fb := newFakeBamboo(t)
+	fb.expect("GET", "/rest/api/latest/deploy/project/42", 200,
+		`{"id":42,"name":"Prod","environments":[{"id":100,"name":"prod-env"}]}`)
+	c := newTestClient(t, fb)
+	dp, err := c.GetDeploymentProject(context.Background(), 42)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dp.ID != 42 || dp.Name != "Prod" || len(dp.Environments) != 1 {
+		t.Fatalf("dp = %+v", dp)
+	}
+}
+
+func TestGetDeploymentProjectSpec(t *testing.T) {
+	t.Parallel()
+	fb := newFakeBamboo(t)
+	fb.expect("GET", "/rest/api/latest/deploy/project/42/specs", 200,
+		`{"deploymentId":42,"code":"import com.atlassian.bamboo.specs..."}`)
+	c := newTestClient(t, fb)
+	sp, err := c.GetDeploymentProjectSpec(context.Background(), 42)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sp.DeploymentID != 42 || !strings.Contains(sp.Code, "bamboo.specs") {
+		t.Errorf("sp = %+v", sp)
+	}
+}
+
+func TestListDeploymentProjectRepositories(t *testing.T) {
+	t.Parallel()
+	fb := newFakeBamboo(t)
+	fb.expect("GET", "/rest/api/latest/deploy/project/42/repository", 200,
+		`[{"id":1,"name":"dr1"}]`)
+	c := newTestClient(t, fb)
+	rs, err := c.ListDeploymentProjectRepositories(context.Background(), 42)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rs) != 1 || rs[0].Name != "dr1" {
+		t.Errorf("rs = %+v", rs)
+	}
+}
+
+func TestGetDeploymentEnvironment(t *testing.T) {
+	t.Parallel()
+	fb := newFakeBamboo(t)
+	fb.expect("GET", "/rest/api/latest/deploy/environment/100", 200,
+		`{"id":100,"name":"prod-env","configurationState":"VALID"}`)
+	c := newTestClient(t, fb)
+	e, err := c.GetDeploymentEnvironment(context.Background(), 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if e.ID != 100 || e.Name != "prod-env" || e.ConfigurationState != "VALID" {
+		t.Errorf("env = %+v", e)
+	}
+}
+
+func TestListEnvironmentVariables(t *testing.T) {
+	t.Parallel()
+	fb := newFakeBamboo(t)
+	fb.expect("GET", "/rest/api/latest/deploy/environment/100/variables", 200,
+		`[{"id":1,"key":"K","value":"v"}]`)
+	c := newTestClient(t, fb)
+	vs, err := c.ListEnvironmentVariables(context.Background(), 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(vs) != 1 || vs[0].Key != "K" {
+		t.Errorf("vs = %+v", vs)
+	}
+}
+
+func TestListEnvironmentRequirements(t *testing.T) {
+	t.Parallel()
+	fb := newFakeBamboo(t)
+	fb.expect("GET", "/rest/api/latest/deploy/environment/100/requirement", 200,
+		`[{"id":1,"key":"os","matchType":"EQUALS","matchValue":"linux"}]`)
+	c := newTestClient(t, fb)
+	rs, err := c.ListEnvironmentRequirements(context.Background(), 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rs) != 1 || rs[0].MatchValue != "linux" {
+		t.Errorf("rs = %+v", rs)
+	}
+}
+
+func TestListEnvironmentAgentAssignments(t *testing.T) {
+	t.Parallel()
+	fb := newFakeBamboo(t)
+	fb.expect("GET", "/rest/api/latest/deploy/environment/100/agent-assignment", 200,
+		`[{"executorId":5,"executorType":"AGENT","executableId":100,"executableType":"ENVIRONMENT"}]`)
+	c := newTestClient(t, fb)
+	as, err := c.ListEnvironmentAgentAssignments(context.Background(), 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(as) != 1 || as[0].ExecutorID != 5 {
+		t.Errorf("as = %+v", as)
+	}
+}
+
+func TestListDeploymentVersions(t *testing.T) {
+	t.Parallel()
+	fb := newFakeBamboo(t)
+	fb.expect("GET", "/rest/api/latest/deploy/project/42/versions", 200,
+		`{"size":2,"versions":[{"id":1,"name":"v1","creatorUserName":"a"},{"id":2,"name":"v2"}]}`)
+	c := newTestClient(t, fb)
+	page, err := c.ListDeploymentVersions(context.Background(), 42, PageOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(page.Results) != 2 || page.Results[0].Name != "v1" {
+		t.Errorf("results = %+v", page.Results)
+	}
+}
+
 func TestWhoAmI(t *testing.T) {
 	t.Parallel()
 	fb := newFakeBamboo(t)

@@ -26,6 +26,7 @@ If `./bbx config view -o json | python3 -c 'import sys,json; print(len(json.load
 | "set up bbx", "first time", "configure", "log in", "add another Bamboo" | **bbx-setup** |
 | "run plan X", "trigger build", "rebuild Y", "kick off Z and watch it" | **bbx-trigger-build** |
 | "why did X fail?", "investigate this build", "what's wrong with PROJ-PLAN-N" | **bbx-investigate-build** |
+| "export plan config", "extract pipeline", "migrate this to <other CI>", "give me everything about plan X" | **bbx-extract-config** |
 | "list plans", "find plan X", "show queue", "what's running", any read-only inspection | stay here |
 | "modify variable / label / comment / branch", non-trigger writes | stay here |
 
@@ -64,6 +65,23 @@ Empty queue returns `[]` — that's normal, not an error.
 ./bbx build history <PROJ-PLAN> --max-results 10 -o json
 ```
 
+### Extract full plan configuration (for replication / migration)
+
+For complete config dump — stages, jobs, tasks, all variables, branches,
+linked deployments — defer to the **bbx-extract-config** skill. Quick
+single-command summary:
+
+```bash
+./bbx plan spec <PROJ-PLAN>                     # Bamboo Specs Java source
+./bbx plan config <PROJ-PLAN> -o json           # same data as nested JSON
+./bbx plan artifact list <PROJ-PLAN> -o json
+./bbx plan vcs-branches <PROJ-PLAN> --all -o json
+./bbx project get <PROJ> -o json
+./bbx project variable list <PROJ> -o json
+./bbx project repository list <PROJ> -o json
+./bbx deployment project list --for-plan <PROJ-PLAN> -o json
+```
+
 ### Inspect the active context (no secrets!)
 
 ```bash
@@ -92,7 +110,8 @@ Always echo "I'm about to <verb> <target>." before executing.
 
 - **Create a plan from scratch** — Bamboo Server's REST has no `POST /plan`. Use `bbx plan clone <src> <dst>` (clones an existing plan), or have the user create it via the Bamboo UI / Bamboo Specs.
 - **Fetch build logs reliably on Bamboo 8.2.4** — the `/download/*` paths require session-cookie auth. `bbx build log` returns `session_auth_required` (exit 3) on servers that gate logs that way. On newer Bamboo versions PAT may work.
-- **Server admin** (`permissions`, `users`, `system`, `triggers`, `trusted-keys`, `session`, `avatars`) — these return exit 6 (`not_implemented`).
+- **Push Bamboo Specs back to the server** — `bbx plan spec` / `bbx deployment project spec` only *read* the Specs Java source. Publishing Specs is its own (separate-auth) subsystem.
+- **Server admin** (`permissions`, `users`, `system`, `triggers`, `trusted-keys`, `session`, `avatars`) — these return exit 6 (`not_implemented`). Note: trigger *configuration* per plan is embedded in the Specs Java that `bbx plan spec` returns.
 - **Stream live build logs** — only finished/in-progress full-text fetch, no tail.
 
 ## Output Format (when reporting back to the user)

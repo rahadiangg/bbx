@@ -6,6 +6,9 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/rahadiangg/bbx/cmd/cmdctx"
+	envcmd "github.com/rahadiangg/bbx/cmd/deployment/environment"
+	dprojcmd "github.com/rahadiangg/bbx/cmd/deployment/project"
+	versioncmd "github.com/rahadiangg/bbx/cmd/deployment/version"
 	"github.com/rahadiangg/bbx/internal/fail"
 )
 
@@ -20,6 +23,9 @@ func New() *cobra.Command {
 	c.AddCommand(newCancelCmd())
 	c.AddCommand(newResultCmd())
 	c.AddCommand(newPreviewCmd())
+	c.AddCommand(dprojcmd.New())
+	c.AddCommand(envcmd.New())
+	c.AddCommand(versioncmd.New())
 	return c
 }
 

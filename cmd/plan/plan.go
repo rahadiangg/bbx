@@ -3,6 +3,7 @@ package plan
 import (
 	"github.com/spf13/cobra"
 
+	artifactcmd "github.com/rahadiangg/bbx/cmd/plan/artifact"
 	branchcmd "github.com/rahadiangg/bbx/cmd/plan/branch"
 	varcmd "github.com/rahadiangg/bbx/cmd/plan/variable"
 )
@@ -19,7 +20,11 @@ func New() *cobra.Command {
 	c.AddCommand(newEnableCmd())
 	c.AddCommand(newDisableCmd())
 	c.AddCommand(newDeleteCmd())
+	c.AddCommand(newSpecCmd())
+	c.AddCommand(newConfigCmd())
+	c.AddCommand(newVCSCmd())
 	c.AddCommand(branchcmd.New())
 	c.AddCommand(varcmd.New())
+	c.AddCommand(artifactcmd.New())
 	return c
 }

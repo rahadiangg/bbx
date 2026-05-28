@@ -261,3 +261,128 @@ func (c *Client) DeletePlanVariable(ctx context.Context, planKey, name string) e
 	p := fmt.Sprintf("/api/latest/plan/%s/variables/%s", url.PathEscape(planKey), url.PathEscape(name))
 	return c.Do(ctx, http.MethodDelete, p, nil, nil, nil)
 }
+
+// Plan configuration extraction --------------------------------------------
+
+// PlanSpec wraps the Bamboo Specs Java source for a single plan. Bamboo
+// auto-generates the source from the live plan configuration — it does NOT
+// require the plan to have been originally created via Bamboo Specs.
+type PlanSpec struct {
+	ProjectKey string `json:"projectKey"`
+	BuildKey   string `json:"buildKey"`
+	Code       string `json:"code"` // executable Bamboo Specs Java
+}
+
+type planSpecEnvelope struct {
+	Spec PlanSpec `json:"spec"`
+}
+
+// GetPlanSpec fetches the full Bamboo Specs Java source for a plan. This is
+// the most complete representation of a plan available via REST: stages,
+// jobs, tasks (executable + arguments), variables, branch management,
+// permissions — everything an AI agent needs to replicate the plan in
+// another CI system.
+func (c *Client) GetPlanSpec(ctx context.Context, planKey string) (*PlanSpec, error) {
+	var env planSpecEnvelope
+	p := fmt.Sprintf("/api/latest/plan/%s/specs", url.PathEscape(planKey))
+	if err := c.Do(ctx, http.MethodGet, p, nil, nil, &env); err != nil {
+		return nil, err
+	}
+	return &env.Spec, nil
+}
+
+// GetPlanConfig fetches the plan with maximum expand — stages, jobs, actions,
+// branches, variableContext — as a structured JSON document. Complementary to
+// GetPlanSpec: the spec endpoint returns Java source, this one returns the
+// same information as nested JSON, which is easier to programmatically inspect
+// without a Java parser.
+//
+// We return map[string]any rather than a strict struct because the expanded
+// shape is large, nested, and varies subtly across Bamboo versions. The caller
+// (or its AI agent) inspects fields directly.
+func (c *Client) GetPlanConfig(ctx context.Context, planKey string) (map[string]any, error) {
+	q := url.Values{}
+	q.Set("expand", "stages.stage.plans.plan,actions,variableContext,branches")
+	var out map[string]any
+	p := "/api/latest/plan/" + url.PathEscape(planKey)
+	if err := c.Do(ctx, http.MethodGet, p, q, nil, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// PlanArtifact describes one artifact definition on a plan (a file pattern
+// the plan produces and optionally shares between jobs).
+type PlanArtifact struct {
+	Name           string `json:"name"`
+	Location       string `json:"location,omitempty"`
+	CopyPattern    string `json:"copyPattern,omitempty"`
+	Shared         bool   `json:"shared,omitempty"`
+	Required       bool   `json:"required,omitempty"`
+	ProducerJobKey any    `json:"producerJobKey,omitempty"`
+	Link           Link   `json:"link,omitempty"`
+}
+
+type planArtifactsEnvelope struct {
+	Artifacts struct {
+		Size       int            `json:"size"`
+		MaxResult  int            `json:"max-result"`
+		StartIndex int            `json:"start-index"`
+		Artifact   []PlanArtifact `json:"artifact"`
+	} `json:"artifacts"`
+}
+
+// ListPlanArtifacts returns the artifact definitions for a plan.
+func (c *Client) ListPlanArtifacts(ctx context.Context, planKey string, opts PageOpts) (Page[PlanArtifact], error) {
+	var env planArtifactsEnvelope
+	p := fmt.Sprintf("/api/latest/plan/%s/artifact", url.PathEscape(planKey))
+	if err := c.Do(ctx, http.MethodGet, p, opts.Values(), nil, &env); err != nil {
+		return Page[PlanArtifact]{}, err
+	}
+	results := env.Artifacts.Artifact
+	if results == nil {
+		results = []PlanArtifact{}
+	}
+	return Page[PlanArtifact]{
+		Results:    results,
+		Size:       env.Artifacts.Size,
+		MaxResult:  env.Artifacts.MaxResult,
+		StartIndex: env.Artifacts.StartIndex,
+	}, nil
+}
+
+// VCSBranch is a branch that exists in the plan's underlying VCS repository
+// (NOT a Bamboo "plan branch" — that's a separate concept exposed by
+// ListPlanBranches).
+type VCSBranch struct {
+	Name string `json:"name"`
+}
+
+type planVCSBranchesEnvelope struct {
+	Branches struct {
+		Size       int         `json:"size"`
+		MaxResult  int         `json:"max-result"`
+		StartIndex int         `json:"start-index"`
+		Branch     []VCSBranch `json:"branch"`
+	} `json:"branches"`
+}
+
+// ListPlanVCSBranches returns the branches present in the underlying repository
+// for a plan. Useful for syncing plan branches with the upstream repo state.
+func (c *Client) ListPlanVCSBranches(ctx context.Context, planKey string, opts PageOpts) (Page[VCSBranch], error) {
+	var env planVCSBranchesEnvelope
+	p := fmt.Sprintf("/api/latest/plan/%s/vcsBranches", url.PathEscape(planKey))
+	if err := c.Do(ctx, http.MethodGet, p, opts.Values(), nil, &env); err != nil {
+		return Page[VCSBranch]{}, err
+	}
+	results := env.Branches.Branch
+	if results == nil {
+		results = []VCSBranch{}
+	}
+	return Page[VCSBranch]{
+		Results:    results,
+		Size:       env.Branches.Size,
+		MaxResult:  env.Branches.MaxResult,
+		StartIndex: env.Branches.StartIndex,
+	}, nil
+}
