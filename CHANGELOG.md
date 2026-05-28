@@ -6,6 +6,12 @@ All notable changes to bbx are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.1.0] — 2026-05-28
+
+First public release. Tagged `v0.1.0`. Binaries for linux / macOS / windows ×
+amd64 / arm64 attached to the GitHub release; one-line install at
+[`install.sh`](install.sh).
+
 ### Added — agent skills bundle + installer (gcx pattern)
 
 - **`bbx agent skills install|list|uninstall|update|show`** — manages the
@@ -59,7 +65,7 @@ API compatibility matrix re-verified: all new endpoints present and
 method-compatible across Bamboo 9.0.0, 9.2.1, 10.0.0, 11.0.0, 12.1.1
 (53 endpoints checked).
 
-## [0.1.0] — unreleased
+### 0.1.0 details
 
 Initial public release.
 
