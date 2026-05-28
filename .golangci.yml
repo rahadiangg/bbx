@@ -1,0 +1,31 @@
+# Minimal golangci-lint config. Aim is to keep CI green with sensible defaults
+# rather than enforce every available linter.
+
+run:
+  timeout: 5m
+  tests: true
+
+issues:
+  exclude-dirs:
+    - internal/apispec/testdata
+
+linters:
+  disable-all: true
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - gofmt
+
+linters-settings:
+  errcheck:
+    # Don't complain about ignoring errors from Close on a deferred reader,
+    # io.Copy(io.Discard, ...), or fmt.Fprintf to bytes.Buffer.
+    exclude-functions:
+      - (io.Closer).Close
+      - io.Copy(io.Discard,...)
+      - fmt.Fprintf
+      - fmt.Fprintln
+      - (*github.com/jedib0t/go-pretty/v6/table.Table).Render

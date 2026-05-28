@@ -1,0 +1,47 @@
+name: API compatibility
+
+# Verifies bbx's REST endpoint registry against published Bamboo OpenAPI
+# specs for every supported major version. This catches path/method
+# removals between Bamboo releases before they break a user's upgrade.
+#
+# Bamboo Server 8.x has no published OpenAPI spec — that version is
+# covered by hand-verified live testing only (see docs/API_COVERAGE.md).
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    # Re-run weekly to catch upstream spec changes between PRs.
+    - cron: '0 6 * * 1'
+
+concurrency:
+  group: api-compat-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  compat:
+    name: Bamboo ${{ matrix.bamboo_version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        bamboo_version:
+          - '9.0.0'
+          - '9.2.1'
+          - '10.0.0'
+          - '11.0.0'
+          - '12.1.1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+          cache: true
+      - name: Compat check
+        env:
+          BBX_COMPAT_SWAGGER: https://docs.atlassian.com/atlassian-bamboo/REST/${{ matrix.bamboo_version }}/swagger.json
+        run: go test ./internal/apispec/... -run TestAPICompat -v

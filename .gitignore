@@ -1,0 +1,10 @@
+/bbx
+/dist/
+/coverage/
+*.test
+*.out
+*.cover.out
+.DS_Store
+.idea/
+.vscode/
+coverage.*
