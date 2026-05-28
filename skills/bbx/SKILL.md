@@ -17,7 +17,7 @@ You drive `bbx`, a Go CLI that wraps Bamboo Server's REST API for both human ope
 
 ## Prerequisites
 
-If `./bbx config view -o json | python3 -c 'import sys,json; print(len(json.load(sys.stdin)["contexts"]))'` returns 0, or the user has never run `bbx auth login`, hand off to the **bbx-setup** skill first.
+If `bbx config view -o json | python3 -c 'import sys,json; print(len(json.load(sys.stdin)["contexts"]))'` returns 0, or the user has never run `bbx auth login`, hand off to the **bbx-setup** skill first.
 
 ## When to delegate to a specialised skill
 
@@ -36,7 +36,7 @@ If `./bbx config view -o json | python3 -c 'import sys,json; print(len(json.load
 
 ```bash
 # List all plans and filter client-side. Use --all to paginate, --limit if many.
-./bbx plan list --all -o json | python3 -c "
+bbx plan list --all -o json | python3 -c "
 import sys, json
 needle = '<user search string>'.lower()
 for p in json.load(sys.stdin):
@@ -51,7 +51,7 @@ Show the user the matches and ask which to act on if more than one.
 ### Show the live queue
 
 ```bash
-./bbx queue list -o json
+bbx queue list -o json
 ```
 
 Empty queue returns `[]` — that's normal, not an error.
@@ -59,10 +59,10 @@ Empty queue returns `[]` — that's normal, not an error.
 ### Inspect a plan
 
 ```bash
-./bbx plan get <PROJ-PLAN> -o json
-./bbx plan variable list <PROJ-PLAN> -o json
-./bbx plan branch list <PROJ-PLAN> -o json
-./bbx build history <PROJ-PLAN> --max-results 10 -o json
+bbx plan get <PROJ-PLAN> -o json
+bbx plan variable list <PROJ-PLAN> -o json
+bbx plan branch list <PROJ-PLAN> -o json
+bbx build history <PROJ-PLAN> --max-results 10 -o json
 ```
 
 ### Extract full plan configuration (for replication / migration)
@@ -72,36 +72,36 @@ linked deployments — defer to the **bbx-extract-config** skill. Quick
 single-command summary:
 
 ```bash
-./bbx plan spec <PROJ-PLAN>                     # Bamboo Specs Java source
-./bbx plan config <PROJ-PLAN> -o json           # same data as nested JSON
-./bbx plan artifact list <PROJ-PLAN> -o json
-./bbx plan vcs-branches <PROJ-PLAN> --all -o json
-./bbx project get <PROJ> -o json
-./bbx project variable list <PROJ> -o json
-./bbx project repository list <PROJ> -o json
-./bbx deployment project list --for-plan <PROJ-PLAN> -o json
+bbx plan spec <PROJ-PLAN>                     # Bamboo Specs Java source
+bbx plan config <PROJ-PLAN> -o json           # same data as nested JSON
+bbx plan artifact list <PROJ-PLAN> -o json
+bbx plan vcs-branches <PROJ-PLAN> --all -o json
+bbx project get <PROJ> -o json
+bbx project variable list <PROJ> -o json
+bbx project repository list <PROJ> -o json
+bbx deployment project list --for-plan <PROJ-PLAN> -o json
 ```
 
 ### Inspect the active context (no secrets!)
 
 ```bash
-./bbx config view -o json
-./bbx info -o json   # live server version
+bbx config view -o json
+bbx info -o json   # live server version
 ```
 
 ### Resource modification (non-trigger)
 
 ```bash
-./bbx plan variable set    <PROJ-PLAN> <NAME> <value>
-./bbx plan variable delete <PROJ-PLAN> <NAME>
-./bbx plan branch  enable  <PROJ-PLAN> <branch-name>
-./bbx plan branch  disable <PROJ-PLAN> <branch-name>
-./bbx plan branch  create  <PROJ-PLAN> <branch-name> --vcs-branch <vcs-branch>
-./bbx plan branch  delete  <PROJ-PLAN> <branch-name>
-./bbx build label   add    <BUILD-KEY> <label>
-./bbx build label   delete <BUILD-KEY> <label>
-./bbx build comment add    <BUILD-KEY> "<text>"
-./bbx build comment delete <BUILD-KEY> <id>
+bbx plan variable set    <PROJ-PLAN> <NAME> <value>
+bbx plan variable delete <PROJ-PLAN> <NAME>
+bbx plan branch  enable  <PROJ-PLAN> <branch-name>
+bbx plan branch  disable <PROJ-PLAN> <branch-name>
+bbx plan branch  create  <PROJ-PLAN> <branch-name> --vcs-branch <vcs-branch>
+bbx plan branch  delete  <PROJ-PLAN> <branch-name>
+bbx build label   add    <BUILD-KEY> <label>
+bbx build label   delete <BUILD-KEY> <label>
+bbx build comment add    <BUILD-KEY> "<text>"
+bbx build comment delete <BUILD-KEY> <id>
 ```
 
 Always echo "I'm about to <verb> <target>." before executing.

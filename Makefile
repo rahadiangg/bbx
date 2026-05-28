@@ -11,10 +11,10 @@ LDFLAGS     := -s -w \
 .PHONY: build install test lint tidy vet clean run docs
 
 build:
-	go build -trimpath -ldflags '$(LDFLAGS)' -o $(BINARY) .
+	go build -trimpath -ldflags '$(LDFLAGS)' -o $(BINARY) ./cmd/bbx
 
 install:
-	go install -trimpath -ldflags '$(LDFLAGS)' .
+	go install -trimpath -ldflags '$(LDFLAGS)' ./cmd/bbx
 
 test:
 	go test ./...

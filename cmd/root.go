@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	agentcmd "github.com/rahadiangg/bbx/cmd/agent"
 	authcmd "github.com/rahadiangg/bbx/cmd/auth"
 	buildcmd "github.com/rahadiangg/bbx/cmd/build"
 	"github.com/rahadiangg/bbx/cmd/cmdctx"
@@ -59,6 +60,7 @@ func New() *cobra.Command {
 	rootCmd.AddCommand(newVersionCmd())
 	rootCmd.AddCommand(newInfoCmd())
 	rootCmd.AddCommand(authcmd.New())
+	rootCmd.AddCommand(agentcmd.New())
 	rootCmd.AddCommand(configcmd.New())
 	rootCmd.AddCommand(projectcmd.New())
 	rootCmd.AddCommand(plancmd.New())

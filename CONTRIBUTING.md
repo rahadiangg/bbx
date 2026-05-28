@@ -28,7 +28,9 @@ make lint         # go vet + golangci-lint if installed
 | `internal/output/` | table/json/yaml renderer + agent-mode detection |
 | `internal/fail/` | Structured errors + exit codes |
 | `internal/apispec/` | Endpoint registry + compatibility checker (used by CI) |
-| `claude-plugin/skills/` | Agent skills (markdown) |
+| `skills/` | Agent skills (markdown) — embedded into the binary via `assets.go` |
+| `.claude-plugin/` | Plugin manifest for Claude Code marketplace discovery |
+| `cmd/bbx/main.go` | Binary entrypoint (root package is library code for the embed) |
 
 ## Adding a new bbx command
 
@@ -42,6 +44,17 @@ make lint         # go vet + golangci-lint if installed
 5. Add an `httptest`-backed unit test in `internal/api/<area>_test.go`.
 6. Add a cmd integration test in `cmd/<area>_test.go` using the existing
    `runCmdEnv` harness.
+
+## Adding a new skill
+
+1. Create `skills/<name>/SKILL.md` with YAML frontmatter (`name`,
+   `description`) and the body conventions used by the existing five.
+2. Update `assets_test.go` to include the new name in the expected list
+   — that's the safety net that the embed isn't silently dropping anything.
+3. Rebuild: `make build`.
+4. Verify: `./bbx agent skills install --force` and `./bbx agent skills list`.
+5. Before tagging a release, bump `version` in
+   [`.claude-plugin/plugin.json`](.claude-plugin/plugin.json) to match.
 
 ## Testing
 

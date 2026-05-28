@@ -6,6 +6,23 @@ All notable changes to bbx are documented here. Format follows
 
 ## [Unreleased]
 
+### Added — agent skills bundle + installer (gcx pattern)
+
+- **`bbx agent skills install|list|uninstall|update|show`** — manages the
+  embedded skill bundle. Default install dir is `~/.agents/skills/`.
+- Skill files moved from `claude-plugin/skills/` to **`skills/`** at the
+  repo root — required by Claude Code's plugin discovery (skills get
+  picked up automatically via `/plugin marketplace add rahadiangg/bbx`).
+- **`.claude-plugin/plugin.json`** — minimal manifest registering bbx as a
+  Claude Code plugin.
+- **`assets.go`** at the repo root — `//go:embed skills` bakes the SKILL.md
+  files into every released binary, so `curl|sh` users can install skills
+  offline via `bbx agent skills install`.
+- Repo restructure: `main.go` → `cmd/bbx/main.go` so the repo root can be
+  the embed library package (`package bbx`).
+- All 5 SKILL.md files: `./bbx` → `bbx` in command examples (post-install
+  the binary is on PATH, not relative).
+
 ### Added — release pipeline
 
 - `.goreleaser.yaml` — multi-arch builds (Linux / macOS / Windows × amd64 /

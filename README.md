@@ -169,23 +169,39 @@ docs/        COMMANDS.md, API_COVERAGE.md
 ## Agent skills
 
 bbx ships a bundle of [Claude Code skills](https://code.claude.com/docs/en/skills)
-at [`claude-plugin/skills/`](claude-plugin/skills/) that let AI agents drive
-the CLI for common workflows:
+at [`skills/`](skills/) that let AI agents drive the CLI for common workflows:
 
 | Skill | Purpose |
 |---|---|
-| [`bbx`](claude-plugin/skills/bbx/SKILL.md) | Catch-all router + read-only discovery (find plans, inspect queue, modify variables/labels/comments). |
-| [`bbx-setup`](claude-plugin/skills/bbx-setup/SKILL.md) | First-time configuration: `auth login`, version capture, smoke `whoami`, multi-context switching. |
-| [`bbx-trigger-build`](claude-plugin/skills/bbx-trigger-build/SKILL.md) | Discover a plan → confirm → trigger → poll `lifeCycleState` until Finished → report. |
-| [`bbx-investigate-build`](claude-plugin/skills/bbx-investigate-build/SKILL.md) | Given a failed build key, gather result + comments + labels + logs and surface likely root cause. |
+| [`bbx`](skills/bbx/SKILL.md) | Catch-all router + read-only discovery. |
+| [`bbx-setup`](skills/bbx-setup/SKILL.md) | First-time configuration, multi-context switching. |
+| [`bbx-trigger-build`](skills/bbx-trigger-build/SKILL.md) | Discover a plan → confirm → trigger → poll → report. |
+| [`bbx-investigate-build`](skills/bbx-investigate-build/SKILL.md) | Given a failed build, gather context and surface likely root cause. |
+| [`bbx-extract-config`](skills/bbx-extract-config/SKILL.md) | Dump full plan configuration (Specs Java, project, deployments) into one JSON bundle for migration / replication. |
 
-The skills follow the same conventions as Grafana's `gcx` skills (YAML
-frontmatter + sectioned markdown). They enforce: explicit confirmation before
-destructive actions, polling timeouts, exit-code-based success checks, and
-"never echo secrets" when summarising config.
+### Three install paths
 
-To use with Claude Code, point at `claude-plugin/skills/` as a plugin path or
-copy each `SKILL.md` into `~/.claude/skills/`.
+```sh
+# 1. Native Claude Code plugin (idiomatic; uses the .claude-plugin/ manifest)
+/plugin marketplace add rahadiangg/bbx
+/plugin install bbx@bbx-marketplace
+
+# 2. CLI install — works for any agent runtime that scans ~/.agents/skills/
+bbx agent skills install --all           # all 5 skills (offline; bundled in the binary)
+bbx agent skills install bbx-setup       # selective
+bbx agent skills list                    # status of each
+bbx agent skills update                  # refresh after upgrading the bbx binary
+bbx agent skills uninstall --all --yes
+
+# 3. Manual (developers / read-only inspection)
+git clone https://github.com/rahadiangg/bbx
+cp -r bbx/skills/* ~/.agents/skills/
+```
+
+The skills follow the same conventions as Grafana's `gcx` (YAML frontmatter +
+sectioned markdown). They enforce: explicit confirmation before destructive
+actions, polling timeouts, exit-code-based success checks, no echoing of
+secrets when summarising config.
 
 ## Scope
 

@@ -1,0 +1,10 @@
+{
+  "name": "bbx",
+  "version": "0.1.0",
+  "description": "Atlassian Bamboo CLI — pipeline management + full configuration extraction for AI agents",
+  "keywords": ["bamboo", "atlassian", "ci", "pipeline", "devops"],
+  "author": {
+    "name": "Dian Rahadian"
+  },
+  "license": "MIT"
+}

@@ -17,20 +17,20 @@ End-to-end workflow: find the plan the user means, confirm, trigger, poll until 
 
 ## Prerequisites
 
-bbx must already have a configured context. If `./bbx auth whoami` returns exit 1 or 3, hand off to **bbx-setup**.
+bbx must already have a configured context. If `bbx auth whoami` returns exit 1 or 3, hand off to **bbx-setup**.
 
 ## Step 1: Resolve the plan key
 
 The user may give a plan key (`RES-TES`), a project name, a plan name, or a fuzzy phrase.
 
 ```bash
-./bbx plan list --all -o json
+bbx plan list --all -o json
 ```
 
 Filter client-side. If exactly one match, proceed. If multiple matches, list them and ask which one. If zero matches, ask the user to refine or paste the plan key.
 
 ```bash
-./bbx plan get <KEY> -o json
+bbx plan get <KEY> -o json
 ```
 
 Capture: `enabled` (boolean), `name`, `projectName`.
@@ -57,7 +57,7 @@ Only proceed on explicit "yes".
 ## Step 3: Enable if needed
 
 ```bash
-./bbx plan enable <KEY>
+bbx plan enable <KEY>
 ```
 
 Expected exit 0. On failure, stop and surface the error.
@@ -67,7 +67,7 @@ Expected exit 0. On failure, stop and surface the error.
 If the user supplied build variables, pass each with `--var key=value`:
 
 ```bash
-./bbx build trigger <KEY> --var <KEY1>=<VAL1> --var <KEY2>=<VAL2> -o json > /tmp/bbx-trigger.json
+bbx build trigger <KEY> --var <KEY1>=<VAL1> --var <KEY2>=<VAL2> -o json > /tmp/bbx-trigger.json
 ```
 
 Capture `buildResultKey` (e.g. `RES-TES-42`) from the JSON output. If exit ≠ 0, surface the error and stop.
@@ -79,7 +79,7 @@ Capture `buildResultKey` (e.g. `RES-TES-42`) from the JSON output. If exit ≠ 0
 ```bash
 KEY="<buildResultKey>"
 for i in $(seq 1 30); do
-  STATE=$(./bbx build get "$KEY" -o json 2>/dev/null | python3 -c '
+  STATE=$(bbx build get "$KEY" -o json 2>/dev/null | python3 -c '
 import sys, json
 d = json.load(sys.stdin)
 print(d.get("lifeCycleState",""))
@@ -99,7 +99,7 @@ done
 After the loop, fetch the final result:
 
 ```bash
-./bbx build get "$KEY" -o json
+bbx build get "$KEY" -o json
 ```
 
 ## Step 6: Report
@@ -134,7 +134,7 @@ bbx passes variables as `bamboo.variable.<KEY>=<VALUE>` query params to `/queue/
 If a value contains spaces or special chars, the user is responsible for shell quoting:
 
 ```bash
-./bbx build trigger RES-TES --var "MESSAGE=hello world" --var "TARGET=prod"
+bbx build trigger RES-TES --var "MESSAGE=hello world" --var "TARGET=prod"
 ```
 
 ## Stopping a build
@@ -142,7 +142,7 @@ If a value contains spaces or special chars, the user is responsible for shell q
 If the user changes their mind mid-poll, or you hit the polling cap:
 
 ```bash
-./bbx build stop <buildResultKey>
+bbx build stop <buildResultKey>
 ```
 
 This may exit 4xx if the build already finished — that's safe, just report it.

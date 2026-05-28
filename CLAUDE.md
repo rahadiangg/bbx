@@ -76,9 +76,11 @@ Skip any of these and CI silently fails to protect the new endpoint.
 
 ## Agent skills
 
-`claude-plugin/skills/*/SKILL.md` — markdown contracts for AI agents (YAML frontmatter `name` + `description`, sectioned body). They are NOT code; they route user intent to `bbx` commands. When changing a command surface (rename, new/removed flags or verbs), grep skills for the literal command string and update.
+`skills/*/SKILL.md` — markdown contracts for AI agents (YAML frontmatter `name` + `description`, sectioned body). They are NOT code; they route user intent to `bbx` commands. When changing a command surface (rename, new/removed flags or verbs), grep skills for the literal command string and update.
 
-The four skills (`bbx`, `bbx-setup`, `bbx-trigger-build`, `bbx-investigate-build`) enforce: explicit `-o json` for parsing, confirmation before destructive actions, polling timeouts, trust exit codes over stdout, never echo secrets.
+The 5 skills (`bbx`, `bbx-setup`, `bbx-trigger-build`, `bbx-investigate-build`, `bbx-extract-config`) enforce: explicit `-o json` for parsing, confirmation before destructive actions, polling timeouts, trust exit codes over stdout, never echo secrets.
+
+Distribution: `//go:embed skills` in `assets.go` (root `package bbx`) bakes them into the binary. `bbx agent skills install [--all|<names...>] [--dir <path>] [--force] [--dry-run]` extracts to `~/.agents/skills/` (default). Same directory is consumed by Claude Code when the repo is added via `/plugin marketplace add rahadiangg/bbx` (manifest at `.claude-plugin/plugin.json`). Single source of truth.
 
 ## CI
 

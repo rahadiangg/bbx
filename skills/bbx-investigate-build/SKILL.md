@@ -22,7 +22,7 @@ bbx must have a configured context (see **bbx-setup** if not). The user must pro
 ## Step 1: Get the build result
 
 ```bash
-./bbx build get <KEY> -o json
+bbx build get <KEY> -o json
 ```
 
 Read these fields: `state`, `lifeCycleState`, `buildState`, `successful`, `buildStartedTime`, `buildCompletedTime`, `buildDurationInSeconds`, `prettyBuildDuration`, `buildReason`, `failedTestCount`, `successfulTestCount`.
@@ -47,8 +47,8 @@ Branch on `lifeCycleState` + `successful`:
 These often contain human notes from previous failures of the same plan.
 
 ```bash
-./bbx build comment list <KEY> -o json
-./bbx build label   list <KEY> -o json
+bbx build comment list <KEY> -o json
+bbx build label   list <KEY> -o json
 ```
 
 Look at comments — quote any that say "known issue", "flaky", "agent X", etc. Labels like `flaky`, `known-bug`, `infra` are also informative.
@@ -56,7 +56,7 @@ Look at comments — quote any that say "known issue", "flaky", "agent X", etc. 
 ## Step 4: Attempt log fetch (best-effort)
 
 ```bash
-./bbx build log <KEY> -o json
+bbx build log <KEY> -o json
 ```
 
 Three outcomes:
@@ -79,7 +79,7 @@ When you do have logs, classify the failure into one of these buckets if you can
 ## Step 5: Check the plan's recent history for a pattern
 
 ```bash
-./bbx build history <PROJ-PLAN> --max-results 5 -o json
+bbx build history <PROJ-PLAN> --max-results 5 -o json
 ```
 
 (Extract `<PROJ-PLAN>` from the key by trimming the trailing `-N`.) If the last 3+ builds were all failed, this is a persistent issue, not a one-off. Say so.

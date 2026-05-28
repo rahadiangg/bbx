@@ -16,14 +16,14 @@ Configure `bbx` to talk to an Atlassian Bamboo Server. Covers first-time setup, 
 
 ## Prerequisites
 
-- bbx binary on PATH (or invoked as `./bbx`). Check with `./bbx version`.
+- bbx binary on PATH (or invoked as `bbx`). Check with `bbx version`.
 - A Bamboo Personal Access Token (PAT). User generates it via Bamboo UI → avatar menu → Profile → Personal access tokens → Create token.
 - The Bamboo base URL (e.g. `https://bamboo.example.com`, `http://build.dev.weefer.co.id:8085`).
 
 ## Step 1: Check existing configuration
 
 ```bash
-./bbx config view -o json
+bbx config view -o json
 ```
 
 If exit 0 and the JSON shows one or more `contexts`, surface them to the user:
@@ -37,7 +37,7 @@ Do you want to (a) use the current one, (b) switch to another, or (c) add a new 
 ```
 
 Branch:
-- (a) → run `./bbx auth whoami` to confirm and stop.
+- (a) → run `bbx auth whoami` to confirm and stop.
 - (b) → see Step 4 (switch context).
 - (c) → continue to Step 2.
 
@@ -56,12 +56,12 @@ If the Bamboo uses a self-signed certificate, ask whether to set `--insecure`. D
 
 Echo the action with a redacted token:
 
-> "I'm about to: `./bbx auth login --name <ctx> --base-url <url> --token <REDACTED>`"
+> "I'm about to: `bbx auth login --name <ctx> --base-url <url> --token <REDACTED>`"
 
 Then execute:
 
 ```bash
-./bbx auth login \
+bbx auth login \
   --name "<ctx>" \
   --base-url "<url>" \
   --token "<pat>" \
@@ -75,7 +75,7 @@ If the server-version line is missing (Bamboo wasn't reachable for `/info`), `bb
 ## Step 4: Switch context (if user picked option b in Step 1)
 
 ```bash
-./bbx config use-context <name>
+bbx config use-context <name>
 ```
 
 Then jump to Step 5.
@@ -83,8 +83,8 @@ Then jump to Step 5.
 ## Step 5: Verify with whoami + info
 
 ```bash
-./bbx auth whoami -o json
-./bbx info -o json
+bbx auth whoami -o json
+bbx info -o json
 ```
 
 Both should exit 0. Show the user a short summary:
@@ -110,9 +110,9 @@ You're set up. Common things you can do now:
 If the user has multiple contexts already and wants to point at a different one:
 
 ```bash
-./bbx config contexts -o json
-./bbx config use-context <name>
-./bbx info             # confirm we're pointing at the right server
+bbx config contexts -o json
+bbx config use-context <name>
+bbx info             # confirm we're pointing at the right server
 ```
 
 ## Per-invocation override (without changing the active context)
@@ -120,7 +120,7 @@ If the user has multiple contexts already and wants to point at a different one:
 For one-off commands against a non-active context:
 
 ```bash
-./bbx --context <name> plan list
+bbx --context <name> plan list
 ```
 
 ## Removing a context
@@ -128,7 +128,7 @@ For one-off commands against a non-active context:
 Confirm with the user first (quote the name and base-url). Then:
 
 ```bash
-./bbx auth logout --name <name>
+bbx auth logout --name <name>
 ```
 
 ## Output Format (final message to the user)

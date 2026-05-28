@@ -10,7 +10,7 @@ before:
 builds:
   - id: bbx
     binary: bbx
-    main: .
+    main: ./cmd/bbx
     env:
       - CGO_ENABLED=0
     goos:

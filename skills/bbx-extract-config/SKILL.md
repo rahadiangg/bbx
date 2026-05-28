@@ -23,7 +23,7 @@ The user must supply a **plan key** in the form `PROJECT-PLAN` (e.g. `ANVIS-ASD`
 ## Step 1: Confirm the plan exists + capture project key
 
 ```bash
-./bbx plan get <PLAN_KEY> -o json
+bbx plan get <PLAN_KEY> -o json
 ```
 
 Extract `projectKey` from the response. Stop with a clear error if the plan doesn't exist (exit 2 + `Plan ... not found`) — ask for the right key.
@@ -33,12 +33,12 @@ Extract `projectKey` from the response. Stop with a clear error if the plan does
 Run these in sequence (none take more than a second each):
 
 ```bash
-./bbx plan spec    <PLAN_KEY>                 # Bamboo Specs Java source — THE primary artifact
-./bbx plan config  <PLAN_KEY>      -o json    # same info, structured
-./bbx plan artifact list <PLAN_KEY> -o json
-./bbx plan variable list <PLAN_KEY> -o json   # ******** for sensitive vars
-./bbx plan branch  list <PLAN_KEY>  -o json   # Bamboo plan branches
-./bbx plan vcs-branches  <PLAN_KEY> --all -o json   # raw branches in the repo
+bbx plan spec    <PLAN_KEY>                 # Bamboo Specs Java source — THE primary artifact
+bbx plan config  <PLAN_KEY>      -o json    # same info, structured
+bbx plan artifact list <PLAN_KEY> -o json
+bbx plan variable list <PLAN_KEY> -o json   # ******** for sensitive vars
+bbx plan branch  list <PLAN_KEY>  -o json   # Bamboo plan branches
+bbx plan vcs-branches  <PLAN_KEY> --all -o json   # raw branches in the repo
 ```
 
 If any returns exit 3 (`Unauthorized`), the user's token lacks the right permission on that plan — stop and tell them.
@@ -46,10 +46,10 @@ If any returns exit 3 (`Unauthorized`), the user's token lacks the right permiss
 ## Step 3: Fetch project context
 
 ```bash
-./bbx project get        <PROJECT_KEY>        -o json
-./bbx project variable   list <PROJECT_KEY>   -o json
-./bbx project repository list <PROJECT_KEY>   -o json
-./bbx project spec       <PROJECT_KEY>        -o json   # bulk Specs export (all plans in project)
+bbx project get        <PROJECT_KEY>        -o json
+bbx project variable   list <PROJECT_KEY>   -o json
+bbx project repository list <PROJECT_KEY>   -o json
+bbx project spec       <PROJECT_KEY>        -o json   # bulk Specs export (all plans in project)
 ```
 
 The bulk `project spec` is large (hundreds of KB for big projects). If you only care about the one plan, the per-plan `bbx plan spec` from Step 2 is enough.
@@ -57,25 +57,25 @@ The bulk `project spec` is large (hundreds of KB for big projects). If you only 
 ## Step 4: Discover + walk linked deployment projects
 
 ```bash
-./bbx deployment project list --for-plan <PLAN_KEY> -o json
+bbx deployment project list --for-plan <PLAN_KEY> -o json
 ```
 
 For each `id` returned (often zero or one), fetch the full deployment config:
 
 ```bash
-./bbx deployment project get   <ID> -o json    # includes embedded environments
-./bbx deployment project spec  <ID> -o json    # Bamboo Specs Java for the deploy side
-./bbx deployment project repository list <ID> -o json
-./bbx deployment version list  <ID> --max-results 5 -o json   # latest 5 versions
+bbx deployment project get   <ID> -o json    # includes embedded environments
+bbx deployment project spec  <ID> -o json    # Bamboo Specs Java for the deploy side
+bbx deployment project repository list <ID> -o json
+bbx deployment version list  <ID> --max-results 5 -o json   # latest 5 versions
 ```
 
 For each environment ID inside the `environments` array of the deployment project:
 
 ```bash
-./bbx deployment environment get             <ENV_ID> -o json
-./bbx deployment environment variable    list <ENV_ID> -o json
-./bbx deployment environment requirement list <ENV_ID> -o json
-./bbx deployment environment agent       list <ENV_ID> -o json
+bbx deployment environment get             <ENV_ID> -o json
+bbx deployment environment variable    list <ENV_ID> -o json
+bbx deployment environment requirement list <ENV_ID> -o json
+bbx deployment environment agent       list <ENV_ID> -o json
 ```
 
 If `deployment project list --for-plan` returns `[]`, the plan has no deployment side — skip Step 4 entirely and tell the user.
