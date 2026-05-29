@@ -179,24 +179,54 @@ at [`skills/`](skills/) that let AI agents drive the CLI for common workflows:
 | [`bbx-investigate-build`](skills/bbx-investigate-build/SKILL.md) | Given a failed build, gather context and surface likely root cause. |
 | [`bbx-extract-config`](skills/bbx-extract-config/SKILL.md) | Dump full plan configuration (Specs Java, project, deployments) into one JSON bundle for migration / replication. |
 
-### Three install paths
+### Install for any AI agent
+
+The skills are `SKILL.md` files in the [open Agent Skills standard](https://agentskills.io/specification),
+so they work with any agent that understands it — Claude Code, OpenAI Codex CLI,
+Cursor, OpenCode, Cline, GitHub Copilot, and more. Only the install *location*
+differs per agent; pick whichever route fits your setup.
 
 ```sh
-# 1. Native Claude Code plugin (idiomatic; uses the .claude-plugin/ manifest)
+# 1. Native Claude Code plugin (uses the .claude-plugin/ manifests)
 /plugin marketplace add rahadiangg/bbx
-/plugin install bbx@bbx-marketplace
+/plugin install bbx@bbx
 
-# 2. CLI install — works for any agent runtime that scans ~/.agents/skills/
-bbx agent skills install --all           # all 5 skills (offline; bundled in the binary)
-bbx agent skills install bbx-setup       # selective
-bbx agent skills list                    # status of each
-bbx agent skills update                  # refresh after upgrading the bbx binary
+# 2. The cross-agent `skills` CLI — no bbx binary needed, fans out to many agents
+npx skills add rahadiangg/bbx                       # auto-detect installed agents
+npx skills add rahadiangg/bbx --skill bbx-setup     # just one
+npx skills add rahadiangg/bbx -a claude-code -a codex   # target specific agents
+
+# 3. The bbx binary — offline, skills are bundled in the binary
+bbx agent skills install --all                  # generic ~/.agents/skills
+bbx agent skills install --all --target codex   # ~/.codex/skills
+bbx agent skills install --all -a claude-code -a cursor   # multiple at once
+bbx agent skills install --all --dir ~/.someagent/skills  # niche/unknown agent
+bbx agent skills list                           # status of each
+bbx agent skills update                         # refresh after upgrading bbx
 bbx agent skills uninstall --all --yes
 
-# 3. Manual (developers / read-only inspection)
+# 4. npm wrapper (npm-native equivalent of route 3)
+npx @rahadiangg/bbx-skills --all --target cursor
+
+# 5. Manual (developers / read-only inspection)
 git clone https://github.com/rahadiangg/bbx
-cp -r bbx/skills/* ~/.agents/skills/
+cp -r bbx/skills/* ~/.agents/skills/   # or your agent's skills dir
 ```
+
+`bbx agent skills install --target` maps each agent to its directory:
+
+| Target | Installs to (global) |
+|---|---|
+| `agents` (default) | `~/.agents/skills` |
+| `claude-code` | `~/.claude/skills` |
+| `codex` | `~/.codex/skills` |
+| `cursor` | `~/.cursor/skills` |
+| `opencode` | `~/.config/opencode/skills` |
+| `cline` | `~/.agents/skills` |
+| `github-copilot` | `~/.copilot/skills` |
+
+Add `--scope project` to install into the repo-relative dir (e.g. `./.claude/skills`)
+instead of `~/`. For an agent not in the table, use `--dir <its skills dir>`.
 
 The skills follow the same conventions as Grafana's `gcx` (YAML frontmatter +
 sectioned markdown). They enforce: explicit confirmation before destructive

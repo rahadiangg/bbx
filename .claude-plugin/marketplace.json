@@ -1,0 +1,13 @@
+{
+  "name": "bbx",
+  "owner": {
+    "name": "rahadiangg"
+  },
+  "plugins": [
+    {
+      "name": "bbx",
+      "source": ".",
+      "description": "Atlassian Bamboo CLI — pipeline management + full configuration extraction for AI agents"
+    }
+  ]
+}

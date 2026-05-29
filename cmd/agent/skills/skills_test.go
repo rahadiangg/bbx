@@ -209,6 +209,53 @@ func TestSkillsUpdateOnlyRefreshesInstalled(t *testing.T) {
 	}
 }
 
+func TestSkillsInstallToAgentTarget(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	// --target codex resolves to ~/.codex/skills (no --dir).
+	if err := run(t, "install", "--target", "codex", "bbx-setup"); err != nil {
+		t.Fatalf("install --target codex: %v", err)
+	}
+	want := skillPath(filepath.Join(home, ".codex", "skills"), "bbx-setup")
+	if _, err := os.Stat(want); err != nil {
+		t.Fatalf("bbx-setup should exist at %s: %v", want, err)
+	}
+}
+
+func TestSkillsInstallNoFlagsUsesGenericAgentsDir(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	// Backward compat: no --dir, no --target ⇒ ~/.agents/skills.
+	if err := run(t, "install", "bbx-setup"); err != nil {
+		t.Fatalf("install: %v", err)
+	}
+	want := skillPath(filepath.Join(home, ".agents", "skills"), "bbx-setup")
+	if _, err := os.Stat(want); err != nil {
+		t.Fatalf("bbx-setup should exist at %s: %v", want, err)
+	}
+}
+
+func TestSkillsInstallMultipleTargets(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	if err := run(t, "install", "-a", "claude-code", "-a", "codex", "bbx-setup"); err != nil {
+		t.Fatalf("install multi-target: %v", err)
+	}
+	for _, sub := range []string{".claude", ".codex"} {
+		want := skillPath(filepath.Join(home, sub, "skills"), "bbx-setup")
+		if _, err := os.Stat(want); err != nil {
+			t.Errorf("bbx-setup should exist at %s: %v", want, err)
+		}
+	}
+}
+
+func TestSkillsInstallUnknownTarget(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	if err := run(t, "install", "--target", "no-such-agent", "bbx-setup"); err == nil {
+		t.Fatalf("expected error for unknown target")
+	}
+}
+
 func TestSkillsShow(t *testing.T) {
 	// Capture stdout via a pipe.
 	r, w, _ := os.Pipe()

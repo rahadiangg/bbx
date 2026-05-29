@@ -80,16 +80,25 @@ Skip any of these and CI silently fails to protect the new endpoint.
 
 The 5 skills (`bbx`, `bbx-setup`, `bbx-trigger-build`, `bbx-investigate-build`, `bbx-extract-config`) enforce: explicit `-o json` for parsing, confirmation before destructive actions, polling timeouts, trust exit codes over stdout, never echo secrets.
 
-Distribution: `//go:embed skills` in `assets.go` (root `package bbx`) bakes them into the binary. `bbx agent skills install [--all|<names...>] [--dir <path>] [--force] [--dry-run]` extracts to `~/.agents/skills/` (default). Same directory is consumed by Claude Code when the repo is added via `/plugin marketplace add rahadiangg/bbx` (manifest at `.claude-plugin/plugin.json`). Single source of truth.
+`skills/*/SKILL.md` is the **single source of truth**. Four consumers read it, all from that one directory:
+
+1. **bbx binary** — `//go:embed skills` in `assets.go` (root `package bbx`) bakes the bundle in. `bbx agent skills install [--all|<names...>] [--target <agent>...|-a] [--scope global|project] [--dir <path>] [--force] [--dry-run]` extracts it. Agent→dir mapping lives in `cmd/agent/skills/targets.go` (registry: `agents` default → `~/.agents/skills`, `claude-code` → `~/.claude/skills`, `codex` → `~/.codex/skills`, `cursor`, `opencode`, `cline`, `github-copilot`). `--dir` overrides the registry; default with no flags stays `~/.agents/skills` (backward compatible). Same per-agent paths as the `vercel-labs/skills` CLI.
+2. **Claude Code plugin** — added via `/plugin marketplace add rahadiangg/bbx` → `/plugin install bbx@bbx`. Requires **both** `.claude-plugin/marketplace.json` (catalog with `plugins[]`, `source: "."`) **and** `.claude-plugin/plugin.json` (the plugin manifest). Skills auto-discovered from `skills/`.
+3. **`npx skills` / skills.sh** — works out of the box (`npx skills add rahadiangg/bbx`) because vercel-labs/skills scans the `skills/<name>/SKILL.md` flat layout. Discovery is automatic via install telemetry; no registry submission.
+4. **npm wrapper** — `npm/` ships `@rahadiangg/bbx-skills` (a dependency-free Node port of the installer, `npm/install.mjs`, mirroring the same target mapping). `npm/skills/` is a **synced copy** of `skills/`, kept in lockstep by `scripts/sync-npm-skills.sh` (`make sync-npm`); CI runs `make check-npm-sync` to fail on drift. Never edit `npm/skills/` by hand.
+
+When changing a command surface (rename, new/removed flags or verbs), grep skills for the literal command string and update. When changing `targets.go`'s registry, mirror it in `npm/install.mjs` (both have tests asserting the mapping).
 
 ## CI
 
-- `.github/workflows/ci.yml` — `go test -race` + `go vet` + `golangci-lint` + `make build` on PR + push to `main`.
+- `.github/workflows/ci.yml` — `go test -race` + `go vet` + `golangci-lint` + `make build` on PR + push to `main`. The `npm-skills` job runs `make check-npm-sync` (fails on `skills/` ↔ `npm/skills/` drift) + the wrapper's `node --test`.
 - `.github/workflows/api-compat.yml` — `TestAPICompat` matrix over Bamboo 9.0.0/9.2.1/10.0.0/11.0.0/12.1.1 with `BBX_COMPAT_SWAGGER` per cell. `fail-fast: false`. Weekly cron catches upstream spec changes.
 - Live-Bamboo CI is intentionally not wired (needs Atlassian license + agent provisioning).
 
 ## Release
 
 Ship a release: `git tag v<x.y.z> && git push --tags`. That fires `.github/workflows/release.yml`, which runs `goreleaser` (config in `.goreleaser.yaml`) to build all 6 OS/arch combos, generate `checksums.txt`, derive the changelog from conventional-commit messages, and publish a GitHub release. `install.sh` at the repo root consumes that release for `curl|sh` installation.
+
+The same workflow has a `npm` job (after goreleaser) that syncs `npm/skills/`, sets the package version from the tag (strips the leading `v`), runs the wrapper tests, and `npm publish`es `@rahadiangg/bbx-skills`. The publish step is **gated on the `NPM_TOKEN` repo secret** — without it, the job runs but skips publishing. Bump `.claude-plugin/plugin.json` `version` on each release too (it gates Claude Code plugin updates).
 
 Smoke-test locally before tagging: `goreleaser check` then `goreleaser build --snapshot --clean --single-target` (~3s).

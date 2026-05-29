@@ -8,7 +8,7 @@ LDFLAGS     := -s -w \
                -X $(PKG)/internal/version.Commit=$(COMMIT) \
                -X $(PKG)/internal/version.Date=$(DATE)
 
-.PHONY: build install test lint tidy vet clean run docs
+.PHONY: build install test lint tidy vet clean run docs sync-npm check-npm-sync
 
 build:
 	go build -trimpath -ldflags '$(LDFLAGS)' -o $(BINARY) ./cmd/bbx
@@ -36,3 +36,11 @@ run: build
 
 docs: build
 	./$(BINARY) docs gen --output docs/COMMANDS.md || true
+
+# Copy the canonical skills/ bundle into the npm wrapper (npm/skills/).
+sync-npm:
+	scripts/sync-npm-skills.sh
+
+# CI gate: fail if npm/skills drifted from skills/.
+check-npm-sync:
+	scripts/sync-npm-skills.sh --check

@@ -47,6 +47,21 @@ jobs:
       - name: Smoke test
         run: ./bbx version
 
+  npm-skills:
+    name: npm wrapper
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+      # Fail if npm/skills/ drifted from the canonical skills/ source of truth.
+      - name: Check skills sync
+        run: make check-npm-sync
+      - name: Test wrapper
+        run: node --test
+        working-directory: npm
+
   lint:
     name: Lint
     runs-on: ubuntu-latest

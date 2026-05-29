@@ -1,7 +1,12 @@
 // Package skills implements `bbx agent skills install|list|uninstall|update|show`.
 // Skills are embedded in the bbx binary at compile time (see assets.go in the
-// root bbx package) and extracted on demand into a per-user agents directory
-// (default `~/.agents/skills/`, overrideable with --dir).
+// root bbx package) and extracted on demand into the directory an AI-agent
+// runtime scans for SKILL.md bundles.
+//
+// The generic default is `~/.agents/skills/`. Use --target to install where a
+// specific agent reads (e.g. claude-code → ~/.claude/skills, codex →
+// ~/.codex/skills); see targets.go for the registry. --dir is the explicit
+// escape hatch for niche agents not in the registry.
 //
 // Pattern mirrors Grafana's `gcx agent skills` for ecosystem consistency.
 package skills
@@ -33,16 +38,19 @@ func New() *cobra.Command {
 		Use:   "skills",
 		Short: "Install, list, and update the bundled bbx agent skills",
 		Long: `bbx ships a curated set of agent skills (markdown contracts for AI
-agents like Claude Code) embedded in the binary. These commands extract
-them into a per-user directory so any agent runtime that scans that
-location picks them up.
+agents — SKILL.md is an open standard shared by Claude Code, Codex, Cursor,
+OpenCode and more) embedded in the binary. These commands extract them into
+the directory an agent scans.
 
-Default install dir is ~/.agents/skills/. Override with --dir.
+Default install dir is ~/.agents/skills/ (generic). Use --target to install
+where a specific agent reads (claude-code, codex, cursor, opencode, cline,
+github-copilot); --dir for anything else.
 
-Three install paths for end users:
-  1. /plugin marketplace add rahadiangg/bbx  (Claude Code native)
-  2. bbx agent skills install --all          (after curl|sh install)
-  3. git clone + cp -r skills/ ~/.agents/skills/  (manual)`,
+Install paths for end users:
+  1. /plugin marketplace add rahadiangg/bbx       (Claude Code native)
+  2. npx skills add rahadiangg/bbx [-a <agent>]    (any agent, no bbx needed)
+  3. bbx agent skills install --all [--target X]   (after curl|sh install)
+  4. git clone + cp -r skills/ <agent skills dir>  (manual)`,
 	}
 	c.AddCommand(newInstallCmd())
 	c.AddCommand(newListCmd())
@@ -52,13 +60,14 @@ Three install paths for end users:
 	return c
 }
 
-// defaultInstallDir returns "~/.agents/skills" with $HOME expanded.
-func defaultInstallDir() (string, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(home, ".agents", "skills"), nil
+// addTargetFlags registers the install-location flags shared by every
+// subcommand: --dir (explicit override), --target/-a (agent name, repeatable),
+// and --scope (global|project). See targets.go for how they resolve.
+func addTargetFlags(c *cobra.Command, dir *string, targets *[]string, scope *string) {
+	c.Flags().StringVar(dir, "dir", "", "explicit install directory (overrides --target/--scope)")
+	c.Flags().StringSliceVarP(targets, "target", "a", nil,
+		"agent target(s): "+strings.Join(targetNames(), ", ")+" (default: agents → ~/.agents/skills)")
+	c.Flags().StringVar(scope, "scope", "global", "install scope: global (~/) or project (cwd)")
 }
 
 // embeddedSkillNames returns the sorted list of skill names embedded in the
@@ -134,22 +143,6 @@ func (b *bufio) next() (string, bool) {
 	return "", false
 }
 
-// resolveDir resolves and (mkdir -p)'s the install directory.
-func resolveDir(flagDir string) (string, error) {
-	dir := flagDir
-	if dir == "" {
-		d, err := defaultInstallDir()
-		if err != nil {
-			return "", fail.Wrap(err, "no_home_dir", fail.ExitGeneric)
-		}
-		dir = d
-	}
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return "", fail.New("mkdir_failed", fmt.Sprintf("cannot create %s: %v", dir, err), fail.ExitUsage)
-	}
-	return dir, nil
-}
-
 // fileStatus describes the install state of a skill on disk.
 type fileStatus int
 
@@ -190,21 +183,38 @@ func checkInstalled(dir, name string, embedded []byte) (fileStatus, error) {
 
 func newInstallCmd() *cobra.Command {
 	var (
-		all    bool
-		dir    string
-		force  bool
-		dryRun bool
+		all     bool
+		dir     string
+		targets []string
+		scope   string
+		force   bool
+		dryRun  bool
 	)
 	c := &cobra.Command{
 		Use:   "install [skills...]",
-		Short: "Extract the bundled skills into the install directory",
+		Short: "Extract the bundled skills into an agent's skills directory",
 		Long: `Without arguments (or with --all), installs every bundled skill.
 Pass specific skill names to install only those. Use 'bbx agent skills
 list' to see what's available.
 
+By default skills install to ~/.agents/skills (the generic location). Use
+--target to install where a specific agent reads, e.g.:
+
+  bbx agent skills install --all --target claude-code   # ~/.claude/skills
+  bbx agent skills install --all --target codex          # ~/.codex/skills
+  bbx agent skills install --all -a cursor -a opencode   # both, in one run
+  bbx agent skills install --all --target codex --scope project  # ./.agents/skills
+
+For an agent not in the registry, point --dir at its skills directory:
+
+  bbx agent skills install --all --dir ~/.someagent/skills
+
+The cross-agent 'npx skills add rahadiangg/bbx' is an alternative that fans
+out to many agents at once.
+
 Refuses to overwrite a modified on-disk SKILL.md unless --force.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			dir, err := resolveDir(dir)
+			dirs, err := resolveTargets(dir, targets, scope)
 			if err != nil {
 				return err
 			}
@@ -218,49 +228,67 @@ Refuses to overwrite a modified on-disk SKILL.md unless --force.`,
 			}
 
 			var written, skipped int
-			for _, name := range selected {
-				content, err := readEmbeddedSkill(name)
+			for _, d := range dirs {
+				if _, err := ensureDir(d); err != nil {
+					return err
+				}
+				w, s, err := installToDir(d, selected, force, dryRun)
 				if err != nil {
-					return fail.Wrap(err, "embed_read_failed", fail.ExitGeneric)
+					return err
 				}
-				dest := filepath.Join(dir, name, "SKILL.md")
-				st, err := checkInstalled(dir, name, content)
-				if err != nil {
-					return fail.Wrap(err, "stat_failed", fail.ExitGeneric)
-				}
-				if st == statusInstalledModified && !force {
-					cmdctx.G().Stderr("skip %s: locally modified (use --force to overwrite, or 'bbx agent skills show %s' to inspect bundled)", name, name)
-					skipped++
-					continue
-				}
-				if st == statusInstalled {
-					// Already up to date; no work needed.
-					skipped++
-					continue
-				}
-				if dryRun {
-					cmdctx.G().Stderr("would write %d bytes to %s", len(content), dest)
-					written++
-					continue
-				}
-				if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
-					return fail.Wrap(err, "mkdir_failed", fail.ExitGeneric)
-				}
-				if err := os.WriteFile(dest, content, 0o644); err != nil {
-					return fail.New("write_failed", fmt.Sprintf("write %s: %v", dest, err), fail.ExitGeneric)
-				}
-				cmdctx.G().Stderr("installed %s -> %s", name, dest)
-				written++
+				written += w
+				skipped += s
 			}
 			cmdctx.G().Stderr("done: %d installed, %d skipped", written, skipped)
 			return nil
 		},
 	}
 	c.Flags().BoolVar(&all, "all", false, "install every bundled skill (default if no names given)")
-	c.Flags().StringVar(&dir, "dir", "", "install directory (default ~/.agents/skills)")
 	c.Flags().BoolVar(&force, "force", false, "overwrite locally-modified skills")
 	c.Flags().BoolVar(&dryRun, "dry-run", false, "print what would happen; don't write")
+	addTargetFlags(c, &dir, &targets, &scope)
 	return c
+}
+
+// installToDir writes the selected skills into one resolved directory,
+// honouring --force (overwrite locally-modified) and --dry-run. It returns the
+// number written and skipped. The directory must already exist (ensureDir).
+func installToDir(dir string, selected []string, force, dryRun bool) (written, skipped int, err error) {
+	for _, name := range selected {
+		content, err := readEmbeddedSkill(name)
+		if err != nil {
+			return written, skipped, fail.Wrap(err, "embed_read_failed", fail.ExitGeneric)
+		}
+		dest := filepath.Join(dir, name, "SKILL.md")
+		st, err := checkInstalled(dir, name, content)
+		if err != nil {
+			return written, skipped, fail.Wrap(err, "stat_failed", fail.ExitGeneric)
+		}
+		if st == statusInstalledModified && !force {
+			cmdctx.G().Stderr("skip %s: locally modified (use --force to overwrite, or 'bbx agent skills show %s' to inspect bundled)", name, name)
+			skipped++
+			continue
+		}
+		if st == statusInstalled {
+			// Already up to date; no work needed.
+			skipped++
+			continue
+		}
+		if dryRun {
+			cmdctx.G().Stderr("would write %d bytes to %s", len(content), dest)
+			written++
+			continue
+		}
+		if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
+			return written, skipped, fail.Wrap(err, "mkdir_failed", fail.ExitGeneric)
+		}
+		if err := os.WriteFile(dest, content, 0o644); err != nil {
+			return written, skipped, fail.New("write_failed", fmt.Sprintf("write %s: %v", dest, err), fail.ExitGeneric)
+		}
+		cmdctx.G().Stderr("installed %s -> %s", name, dest)
+		written++
+	}
+	return written, skipped, nil
 }
 
 // selectSkills resolves the list of skills to act on: explicit args, or all
@@ -289,6 +317,7 @@ func selectSkills(allNames, args []string, allFlag bool) ([]string, error) {
 
 type skillRow struct {
 	Name        string `json:"name"`
+	Dir         string `json:"dir,omitempty"`
 	Status      string `json:"status"`
 	Description string `json:"description,omitempty"`
 	Path        string `json:"path,omitempty"`
@@ -297,25 +326,48 @@ type skillRow struct {
 type skillRowList []skillRow
 
 func (l skillRowList) RenderTable(w io.Writer) error {
+	// Only show the DIR column when more than one install dir is in play —
+	// keeps single-target (the common case) output identical to before.
+	multiDir := false
+	for _, r := range l {
+		if r.Dir != "" {
+			multiDir = true
+			break
+		}
+	}
 	t := output.NewTable(w, "NAME", "STATUS", "DESCRIPTION")
+	if multiDir {
+		t = output.NewTable(w, "NAME", "DIR", "STATUS", "DESCRIPTION")
+	}
 	for _, r := range l {
 		desc := r.Description
 		if len(desc) > 80 {
 			desc = desc[:77] + "..."
 		}
-		t.AppendRow([]any{r.Name, r.Status, desc})
+		if multiDir {
+			t.AppendRow([]any{r.Name, r.Dir, r.Status, desc})
+		} else {
+			t.AppendRow([]any{r.Name, r.Status, desc})
+		}
 	}
 	t.Render()
 	return nil
 }
 
 func newListCmd() *cobra.Command {
-	var dir string
+	var (
+		dir     string
+		targets []string
+		scope   string
+	)
 	c := &cobra.Command{
 		Use:   "list",
 		Short: "List bundled skills + their install status",
+		Long: `Lists the bundled skills and whether each is installed in the
+target directory. With multiple --target values, a DIR column disambiguates
+which agent location each row describes.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			d, err := resolveDir(dir)
+			dirs, err := resolveTargets(dir, targets, scope)
 			if err != nil {
 				return err
 			}
@@ -323,27 +375,33 @@ func newListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			rows := make(skillRowList, 0, len(names))
-			for _, name := range names {
-				content, err := readEmbeddedSkill(name)
-				if err != nil {
-					return fail.Wrap(err, "embed_read_failed", fail.ExitGeneric)
+			multiDir := len(dirs) > 1
+			rows := make(skillRowList, 0, len(names)*len(dirs))
+			for _, d := range dirs {
+				for _, name := range names {
+					content, err := readEmbeddedSkill(name)
+					if err != nil {
+						return fail.Wrap(err, "embed_read_failed", fail.ExitGeneric)
+					}
+					st, _ := checkInstalled(d, name, content)
+					row := skillRow{
+						Name:        name,
+						Status:      st.String(),
+						Description: skillDescription(content),
+					}
+					if multiDir {
+						row.Dir = d
+					}
+					if st != statusNotInstalled {
+						row.Path = filepath.Join(d, name, "SKILL.md")
+					}
+					rows = append(rows, row)
 				}
-				st, _ := checkInstalled(d, name, content)
-				row := skillRow{
-					Name:        name,
-					Status:      st.String(),
-					Description: skillDescription(content),
-				}
-				if st != statusNotInstalled {
-					row.Path = filepath.Join(d, name, "SKILL.md")
-				}
-				rows = append(rows, row)
 			}
 			return cmdctx.G().Emit(rows)
 		},
 	}
-	c.Flags().StringVar(&dir, "dir", "", "install directory (default ~/.agents/skills)")
+	addTargetFlags(c, &dir, &targets, &scope)
 	return c
 }
 
@@ -351,18 +409,21 @@ func newListCmd() *cobra.Command {
 
 func newUninstallCmd() *cobra.Command {
 	var (
-		all    bool
-		dir    string
-		yes    bool
-		dryRun bool
+		all     bool
+		dir     string
+		targets []string
+		scope   string
+		yes     bool
+		dryRun  bool
 	)
 	c := &cobra.Command{
 		Use:   "uninstall [skills...]",
-		Short: "Remove bbx-managed skills from the install directory",
+		Short: "Remove bbx-managed skills from an agent's skills directory",
 		Long: `Only removes skills that bbx manages (i.e. names match an embedded
-skill). Non-bbx files in the install dir are never touched.`,
+skill). Non-bbx files in the install dir are never touched. Use --target /
+--dir / --scope to select the directory, exactly like 'install'.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			d, err := resolveDir(dir)
+			dirs, err := resolveTargets(dir, targets, scope)
 			if err != nil {
 				return err
 			}
@@ -375,12 +436,15 @@ skill). Non-bbx files in the install dir are never touched.`,
 				return err
 			}
 
-			// Collect candidate dirs that actually exist on disk.
+			// Collect candidate dirs that actually exist on disk, across every
+			// resolved target directory.
 			var toRemove []string
-			for _, name := range selected {
-				p := filepath.Join(d, name)
-				if _, err := os.Stat(p); err == nil {
-					toRemove = append(toRemove, p)
+			for _, d := range dirs {
+				for _, name := range selected {
+					p := filepath.Join(d, name)
+					if _, err := os.Stat(p); err == nil {
+						toRemove = append(toRemove, p)
+					}
 				}
 			}
 			if len(toRemove) == 0 {
@@ -421,9 +485,9 @@ skill). Non-bbx files in the install dir are never touched.`,
 		},
 	}
 	c.Flags().BoolVar(&all, "all", false, "uninstall every bundled skill (default if no names given)")
-	c.Flags().StringVar(&dir, "dir", "", "install directory (default ~/.agents/skills)")
 	c.Flags().BoolVar(&yes, "yes", false, "skip the confirmation prompt")
 	c.Flags().BoolVar(&dryRun, "dry-run", false, "print what would happen; don't remove")
+	addTargetFlags(c, &dir, &targets, &scope)
 	return c
 }
 
@@ -431,16 +495,19 @@ skill). Non-bbx files in the install dir are never touched.`,
 
 func newUpdateCmd() *cobra.Command {
 	var (
-		dir    string
-		dryRun bool
+		dir     string
+		targets []string
+		scope   string
+		dryRun  bool
 	)
 	c := &cobra.Command{
 		Use:   "update",
 		Short: "Refresh already-installed skills with the bundled content",
 		Long: `Like 'install --force', but only touches skills that are already
-installed in the target dir. Useful after upgrading the bbx binary.`,
+installed in the target dir(s). Useful after upgrading the bbx binary. Use
+--target / --dir / --scope to select the directory, exactly like 'install'.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			d, err := resolveDir(dir)
+			dirs, err := resolveTargets(dir, targets, scope)
 			if err != nil {
 				return err
 			}
@@ -449,43 +516,52 @@ installed in the target dir. Useful after upgrading the bbx binary.`,
 				return err
 			}
 			var updated, skipped int
-			for _, name := range names {
-				content, err := readEmbeddedSkill(name)
+			for _, d := range dirs {
+				u, s, err := updateDir(d, names, dryRun)
 				if err != nil {
-					return fail.Wrap(err, "embed_read_failed", fail.ExitGeneric)
+					return err
 				}
-				st, _ := checkInstalled(d, name, content)
-				if st == statusNotInstalled {
-					skipped++
-					continue
-				}
-				if st == statusInstalled {
-					// already up to date
-					skipped++
-					continue
-				}
-				dest := filepath.Join(d, name, "SKILL.md")
-				if dryRun {
-					cmdctx.G().Stderr("would update %s", dest)
-					updated++
-					continue
-				}
-				if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
-					return fail.Wrap(err, "mkdir_failed", fail.ExitGeneric)
-				}
-				if err := os.WriteFile(dest, content, 0o644); err != nil {
-					return fail.New("write_failed", fmt.Sprintf("write %s: %v", dest, err), fail.ExitGeneric)
-				}
-				cmdctx.G().Stderr("updated %s", dest)
-				updated++
+				updated += u
+				skipped += s
 			}
 			cmdctx.G().Stderr("done: %d updated, %d skipped", updated, skipped)
 			return nil
 		},
 	}
-	c.Flags().StringVar(&dir, "dir", "", "install directory (default ~/.agents/skills)")
 	c.Flags().BoolVar(&dryRun, "dry-run", false, "print what would happen; don't write")
+	addTargetFlags(c, &dir, &targets, &scope)
 	return c
+}
+
+// updateDir refreshes only the already-installed skills in one directory.
+func updateDir(dir string, names []string, dryRun bool) (updated, skipped int, err error) {
+	for _, name := range names {
+		content, err := readEmbeddedSkill(name)
+		if err != nil {
+			return updated, skipped, fail.Wrap(err, "embed_read_failed", fail.ExitGeneric)
+		}
+		st, _ := checkInstalled(dir, name, content)
+		if st == statusNotInstalled || st == statusInstalled {
+			// not present, or already up to date
+			skipped++
+			continue
+		}
+		dest := filepath.Join(dir, name, "SKILL.md")
+		if dryRun {
+			cmdctx.G().Stderr("would update %s", dest)
+			updated++
+			continue
+		}
+		if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
+			return updated, skipped, fail.Wrap(err, "mkdir_failed", fail.ExitGeneric)
+		}
+		if err := os.WriteFile(dest, content, 0o644); err != nil {
+			return updated, skipped, fail.New("write_failed", fmt.Sprintf("write %s: %v", dest, err), fail.ExitGeneric)
+		}
+		cmdctx.G().Stderr("updated %s", dest)
+		updated++
+	}
+	return updated, skipped, nil
 }
 
 // show -------------------------------------------------------------------

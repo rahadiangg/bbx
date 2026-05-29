@@ -1,0 +1,41 @@
+{
+  "name": "@rahadiangg/bbx-skills",
+  "version": "0.2.0",
+  "description": "Install the bbx Atlassian Bamboo agent skills into any AI agent (Claude Code, Codex, Cursor, OpenCode, and more)",
+  "type": "module",
+  "bin": {
+    "bbx-skills": "install.mjs"
+  },
+  "files": [
+    "install.mjs",
+    "skills/**/SKILL.md",
+    "skills/README.md"
+  ],
+  "keywords": [
+    "agent-skills",
+    "skills",
+    "claude-code",
+    "codex",
+    "cursor",
+    "bamboo",
+    "atlassian",
+    "bbx"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rahadiangg/bbx.git",
+    "directory": "npm"
+  },
+  "homepage": "https://github.com/rahadiangg/bbx#readme",
+  "bugs": {
+    "url": "https://github.com/rahadiangg/bbx/issues"
+  },
+  "author": "rahadiangg",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test"
+  }
+}
